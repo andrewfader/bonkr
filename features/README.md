@@ -1,0 +1,21 @@
+# Features
+
+Every user-visible behaviour of BONKR has a scenario here, in Given/When/Then form, and an
+executable test mapped to it. The feature file names the test binary and the scenario function
+that proves each scenario; `ctest` runs them all. A scenario without a mapped test is a bug in
+this directory, and a test without a scenario is a bug in the test.
+
+| Feature | Executable |
+|---|---|
+| dsp_building_blocks.feature | `dsp_tests` |
+| physics.feature | `physics_tests` |
+| kit.feature | `kit_tests` |
+| air.feature | `air_tests` |
+| engine.feature | `engine_tests` |
+| references.feature | `reference_tests` |
+| clap_plugin.feature | `plugin_smoke`, `note_tests`, `state_tests` |
+| advertised_parameters.feature | `advertised_tests` |
+| editor.feature | `ui_tests`, `frontend_tests` (Linux) |
+
+The feature files are written from the tests' own GIVEN/WHEN/THEN steps by `tools/features.py`;
+run it after changing a scenario.
