@@ -37,7 +37,7 @@ than 5. The gate depends only on the recordings. On top of the gate, `baseline.t
 ratchet: no sound may score worse than its baseline.
 
     build-release/bonkr-reference match              # every sound: score, spread, gate, baseline
-    build-release/bonkr-reference match Snare --features   # BONKR's features beside each recording's
+    build-release/bonkr-reference match Snare --features   # BONKR's features beside those of each recording
     build-release/bonkr-reference match --update-baseline
 
 To change the recordings: edit the rules in `tools/references/choose.py`, then

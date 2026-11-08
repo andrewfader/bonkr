@@ -23,7 +23,7 @@ spread real instruments show (see [references/README.md](references/README.md)).
 | Taiko | o-daiko, nagado-daiko, shime-daiko, the kara (rim) |
 | Hands | a hand clap, a group of clappers, a finger snap |
 | TR-808 | kick, snare, clap, closed and open hats, cymbal, cowbell, tom, conga, rimshot, claves, maracas: its circuits |
-| TR-909 | kick, snare, clap, closed and open hats, crash, ride (real cymbals through 6 bits, as the 909's were), tom, rimshot |
+| TR-909 | kick, snare, clap, closed and open hats, crash, ride (real cymbals through 6 bits, as in the 909), tom, rimshot |
 | CR-78 | kick, snare, hat, guiro |
 | Junkyard | trash can, its lid, an oil drum, a dropped metal pipe, a smashed pane of glass |
 | Machines and the environment | an electromechanical telephone bell, a washing machine, a jet flyby (Doppler), a vuvuzela, an air-raid siren |
@@ -36,7 +36,7 @@ TR-909 and CR-78, the LinnDrum, Oberheim DMX, E-mu SP-1200, Akai MPC60 and Alesi
 models through each machine's converter), a junkyard, foley and machines, artillery and
 fireworks. Or play **one sound across the keyboard**, C4 at its own pitch.
 
-**The player**: the striker (each sound's own, or a stick, felt mallet, hand, brush, rods or hard
+**The player**: the striker (the one native to each sound, or a stick, felt mallet, hand, brush, rods or hard
 mallet) meeting the surface by Hertzian contact, its hardness, where it lands, how velocity
 reaches the stroke's speed; a drum struck again while it rings is the same drum struck again.
 **The drum**: decay, damping, the tension glide of a hard stroke, the snares and their strainer,
