@@ -280,6 +280,17 @@ inline double whitham_duration_s(double mach, double diameter_m, double length_m
   return 1.82 * mach * std::pow(r_m, 0.25) * diameter_m / (c * std::pow(mach * mach - 1.0, 0.375) * std::pow(length_m, 0.25));
 }
 
+// The frequency at which ISO 9613-1 takes 6 dB off over r metres of air at this temperature and
+// relative humidity: the corner of the low-pass that stands for the air on that path.
+inline double air_cutoff_hz(double r_m, double celsius, double rh, double rate) {
+  double lo = 20.0, hi = std::min(20000.0, rate * 0.45);
+  for (int i = 0; i < 40; ++i) {
+    const double mid = std::sqrt(lo * hi);
+    if (air::absorption_db_per_m(mid, celsius, rh) * r_m > 6.0) hi = mid; else lo = mid;
+  }
+  return std::sqrt(lo * hi);
+}
+
 // One pressure event in flight: a Friedlander blast or an N-wave, arriving `delay` samples from now.
 struct Shock {
   enum class Kind : uint8_t { Friedlander, NWave } kind = Kind::Friedlander;
@@ -299,13 +310,8 @@ class ShockField {
   void reset() { count_ = 0; for (auto& s : lp_) s = 0.0f; for (auto& s : lp2_) s = 0.0f; }
   // The air's loss over a path of r metres becomes a two-pole low-pass at the frequency where
   // ISO 9613-1 takes 6 dB off (spreading is in the amplitude).
-  void set_path(int path, double r_m, double celsius = 15.0, double rh = 0.6) {
-    double lo = 20.0, hi = std::min(20000.0, rate_ * 0.45);
-    for (int i = 0; i < 40; ++i) {
-      const double mid = std::sqrt(lo * hi);
-      if (air::absorption_db_per_m(mid, celsius, rh) * r_m > 6.0) hi = mid; else lo = mid;
-    }
-    pole_[static_cast<size_t>(path)] = static_cast<float>(std::exp(-kTau * std::sqrt(lo * hi) / rate_));
+  void set_path(int path, double r_m, double celsius = 20.0, double rh = 0.45) {
+    pole_[static_cast<size_t>(path)] = static_cast<float>(std::exp(-kTau * air_cutoff_hz(r_m, celsius, rh, rate_) / rate_));
   }
   void add(const Shock& s) { if (count_ < kMax) shocks_[static_cast<size_t>(count_++)] = s; }
   float process() {
@@ -395,20 +401,22 @@ class LipHorn {
 
 // A jet flying past at `speed` m/s, `closest` metres away at its closest, heard on the ground: the
 // fan's blade-passing whine and its buzz-saw harmonics, the jet's mixing roar peaking at a
-// Strouhal number of 0.2 (aft-directed: loudest after it has passed), Doppler-shifted, falling as
-// 1/r, filtered by the air over r.
+// Strouhal number of 0.2 (aft-directed: loudest after it has passed), Doppler-shifted at the speed
+// of sound of the day's air, falling as 1/r, filtered by ISO 9613-1's absorption over r at the
+// day's temperature and humidity.
 class Flyby {
  public:
   void prepare(double rate) { rate_ = rate; roar_.prepare(rate); roar2_.prepare(rate); reset(); }
   void reset() { t_ = 1e9; phase_.fill(0.0); lp_ = lp2_ = 0.0f; }
-  void start(double speed, double closest, double blade_hz, double duration_s) {
+  void start(double speed, double closest, double blade_hz, double duration_s, double celsius = 20.0, double rh = 0.45) {
     speed_ = speed; closest_ = closest; blade_ = blade_hz;
+    celsius_ = celsius; rh_ = rh; c_ = air::speed_of_sound(celsius); air_tick_ = 0;
     // Emission time runs from -duration/2 to +duration/2 around the closest point.
     te_ = -duration_s * 0.5; t_ = 0.0; end_ = duration_s * 0.5;
   }
   float process(Rng& rng) {
     if (te_ > end_ + 2.0 || t_ > 1e8) return 0.0f;
-    const double c = 343.0;
+    const double c = c_;
     const double x = speed_ * te_;
     const double r = std::sqrt(x * x + closest_ * closest_);
     const double rdot = speed_ * x / r;            // dr/dt_e
@@ -433,11 +441,14 @@ class Flyby {
     const float n = rng.bipolar();
     const float roar = roar_.low(n) * 1.6f + roar2_.band(n) * 0.5f;
     float y = static_cast<float>(spread * (fan * whine * 0.6 + jet * roar));
-    // The air over r: the cutoff where ISO 9613-1 takes 6 dB.
-    const double cutoff = std::clamp(9000.0 * std::pow(100.0 / r, 0.6), 400.0, rate_ * 0.45);
-    const float pole = static_cast<float>(std::exp(-kTau * cutoff / rate_));
-    lp_ = y + (lp_ - y) * pole;
-    lp2_ = lp_ + (lp2_ - lp_) * pole;
+    // The air over r: the corner where ISO 9613-1 takes 6 dB, recomputed every 256 samples as the
+    // distance changes.
+    if (air_tick_-- <= 0) {
+      air_tick_ = 255;
+      pole_ = static_cast<float>(std::exp(-kTau * air_cutoff_hz(r, celsius_, rh_, rate_) / rate_));
+    }
+    lp_ = y + (lp_ - y) * pole_;
+    lp2_ = lp_ + (lp2_ - lp_) * pole_;
     return lp2_;
   }
   bool active() const { return te_ <= end_ + 2.0 && t_ < 1e8; }
@@ -445,7 +456,9 @@ class Flyby {
   StateVariable roar_, roar2_;
   std::array<double, 4> phase_{};
   double rate_ = 48000.0, t_ = 1e9, te_ = 0.0, end_ = 0.0, speed_ = 120.0, closest_ = 150.0, blade_ = 2400.0;
-  float lp_ = 0.0f, lp2_ = 0.0f;
+  double celsius_ = 20.0, rh_ = 0.45, c_ = 343.2;
+  int air_tick_ = 0;
+  float lp_ = 0.0f, lp2_ = 0.0f, pole_ = 0.0f;
 };
 
 }  // namespace bonkr::dsp::src

@@ -36,6 +36,11 @@ Feature: The engine: strokes, levels, presets, limiter, converter, compressor an
     Given the tam-tam struck in a church, the microphones far away
     Then by the end of the advertised tail it is 50 dB down
 
+  # engine_tests :: the_air_knobs_reach_the_outdoor_sounds
+  Scenario: the air knobs reach the outdoor sounds
+    Given the big explosion through the engine, with the Humidity knob at 10% and at 70%, no room
+    Then the explosion's own 900 m of air follows the knob: darker when dry
+
   # engine_tests :: the_converter_holds_and_quantises_at_the_machines_clock
   Scenario: the converter holds and quantises at the machines clock
     Given the SP-1200 converter on a tom

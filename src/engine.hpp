@@ -209,6 +209,8 @@ class Engine {
     p.snares = s[params::kSnares];
     p.snare_tension = s[params::kSnareTension];
     p.resonance = s[params::kResonance];
+    p.celsius = s[params::kTemperature];
+    p.humidity = s[params::kHumidity];
     p.seed = seed;
     return p;
   }

@@ -43,7 +43,7 @@ reaches the stroke's speed; a drum struck again while it rings is the same drum 
 the resonant head. **The machine**: the converters (LinnDrum and DMX 8-bit companded, SP-1200 and
 MPC60 12-bit, HR-16 16-bit), MPC swing and note repeat from the host's tempo, drive, the hi-hat
 choke. **The studio**: the listen-mic compressor and a gate on the room, for the gated drums of
-the early 1980s. **The room and its air**, as in HONKR. Chokes from the host (CLAP note choke) or
+the early 1980s. **The room and its air**, as in HONKR (room size, absorption, microphone distance, pattern and setup, humidity, temperature); the same air is what the blasts, the thunder and the passing jet cross outdoors, so a distant cannon is duller on a dry day. Chokes from the host (CLAP note choke) or
 an electronic kit's cymbal grab (polyphonic pressure).
 
 **47 presets**, among them "In the Air Tonight toms", "Gated snare, 1985", "Stairwell drums

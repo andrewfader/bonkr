@@ -37,6 +37,8 @@ struct Play {
   double snares = 1.0;     // snare wires: 0 off .. 1 on
   double snare_tension = 0.5;
   double resonance = 0.5;  // the resonant head, the shell, the body: 0 dead .. 1 ringing
+  double celsius = 20.0;   // the air outdoors: the speed of sound, and what the air absorbs over
+  double humidity = 0.45;  // a blast's, a storm's or a jet's long path (relative, 0..1)
   uint32_t seed = 1;
 };
 
@@ -170,7 +172,13 @@ class Voice {
         }
         default: break;
       }
-      y += noise_[i].process(rng_);
+      float v = noise_[i].process(rng_);
+      if (i == 2 && tail_air_pole_ > 0.0f) {
+        tail_lp_[0] = v + (tail_lp_[0] - v) * tail_air_pole_;
+        tail_lp_[1] = tail_lp_[0] + (tail_lp_[1] - tail_lp_[0]) * tail_air_pole_;
+        v = tail_lp_[1];
+      }
+      y += v;
     }
     if (wires_on_) y += wires_.process(bank_[wire_bank_].displacement() * wire_scale_, rng_);
     if (particles_on_) y += particles_.process(rng_) * particle_gain_;
@@ -415,6 +423,10 @@ class Voice {
     contact_[static_cast<size_t>(c)].strike(s, speed_ * std::sqrt(scale), impulse(s, scale), rng_.next(), delay);
   }
 
+  // The day's air: the speed of sound, and ISO 9613-1's absorption over a path of r metres.
+  double sound_speed() const { return air::speed_of_sound(play_.celsius); }
+  void air_path(int path, double r) { shocks_.set_path(path, r, play_.celsius, play_.humidity); }
+
   // A blast heard R metres away, with its ground reflection, the terrain's echoes and the
   // scattered tail: the many small reflections from trees, walls and the ground around, which
   // arrive as a diffuse rumble dying over `tail_s` (a 60 dB time), centred near `tail_hz`.
@@ -431,7 +443,7 @@ class Voice {
     shocks_.add(s);
     const double hs = 1.5, hr = 1.5;
     const double extra = std::sqrt(r * r + (hs + hr) * (hs + hr)) - r;
-    s.t -= extra / 343.0 * rate_ + 1.0; s.amp = level * 0.6; s.path = 1;
+    s.t -= extra / sound_speed() * rate_ + 1.0; s.amp = level * 0.6; s.path = 1;
     shocks_.add(s);
     for (int e = 0; e < echoes; ++e) {
       src::Shock echo = s;
@@ -441,11 +453,14 @@ class Voice {
       echo.length = td * (1.5 + 2.0 * rng_.unipolar());  // a distant echo arrives smeared
       shocks_.add(echo);
     }
-    shocks_.set_path(0, r); shocks_.set_path(1, r + extra); shocks_.set_path(2, r + 600.0);
+    air_path(0, r); air_path(1, r + extra); air_path(2, r + 600.0);
     shocks_on_ = true;
     if (tail_level > 0.0) {
       noise(2, src::NoiseBand::Shape::Band, tail_hz, 0.9, 12.0 + 1000.0 * delay_s, tail_s * 1000.0, level * tail_level);
       noise_[2].trigger(1.0);
+      // The scattered sound comes the long way round (out to what it scatters from and back, a few
+      // times the distance, up to the terrain some 600 m off) and loses the air's treble over it.
+      tail_air_pole_ = static_cast<float>(std::exp(-kTau * src::air_cutoff_hz(r + std::min(600.0, 2.0 * r + 40.0), play_.celsius, play_.humidity, rate_) / rate_));
     }
   }
   void nwave(double seconds, double amp, double delay_s = 0.0, int path = 0) {
@@ -475,6 +490,7 @@ class Voice {
     for (auto& n : noise_) n.set(Shape::Band, 1000.0, 1.0, 1.0, 1.0, 0.0);
     particle_gain_ = 1.0f; shock_gain_ = 1.0f; osc_gain_ = {0.0f, 0.0f};
     hp_pole_ = lp_pole_ = 0.0f; drive_ = 0.0f; bits_ = 0; wire_bank_ = 0; wire_scale_ = 1.0;
+    tail_air_pole_ = 0.0f; tail_lp_ = {0.0f, 0.0f};
     tone(20.0, 0.0);
     const uint32_t body_seed = 0x5eedu + static_cast<uint32_t>(sound_) * 7919u;  // a body is the same every stroke
     // A shock wave's push is mostly below 20 Hz; what is heard of it is what a microphone (and an
@@ -1043,7 +1059,7 @@ class Voice {
         break;
       }
       case kJetFlyby: {
-        flyby_.start(140.0, 90.0, 2450.0 * p.tune, 6.0 * p.decay);
+        flyby_.start(140.0, 90.0, 2450.0 * p.tune, 6.0 * p.decay, p.celsius, p.humidity);
         flyby_on_ = true;
         tone(25.0, 0.0);
         break;
@@ -1071,7 +1087,7 @@ class Voice {
         static constexpr double kR[] = {1.0, 3.0, 5.0};
         static constexpr double kT[] = {0.15, 0.08, 0.05};
         static constexpr double kG[] = {1.0, 0.4, 0.2};
-        table(0, 343.0 / (4.0 * 0.6), kR, kT, kG, 3, p);
+        table(0, sound_speed() / (4.0 * 0.6), kR, kT, kG, 3, p);
         noise(0, Shape::Band, 2500.0, 0.5, 30.0, 700.0, 0.12);  // the lift charge's hiss as the shell climbs
         break;
       }
@@ -1099,13 +1115,13 @@ class Voice {
         static constexpr double kR[] = {1.0, 3.0};
         static constexpr double kT[] = {0.3, 0.12};
         static constexpr double kG[] = {1.0, 0.3};
-        table(0, 343.0 / (4.0 * 1.2), kR, kT, kG, 2, p);
+        table(0, sound_speed() / (4.0 * 1.2), kR, kT, kG, 2, p);
         break;
       }
       case kRifle: case kMachineGun: {
         // 7.62 mm at Mach 2.5, passing 5 m off; the muzzle 8 m away.
         blast(0.004, 8.0, 3, 1.2, 1.0, 0.0, 1.4, 1500.0, 0.35);
-        nwave(src::whitham_duration_s(2.5, 0.00762, 0.03, 5.0), 3.0, 0.0);
+        nwave(src::whitham_duration_s(2.5, 0.00762, 0.03, 5.0, sound_speed()), 3.0, 0.0);
         if (sound_ == kMachineGun) every(1.0 / 11.0, true, 0, 0.05, 1.0 / 11.0);
         break;
       }
@@ -1121,7 +1137,7 @@ class Voice {
       case kThunder: {
         // A lightning channel some kilometres long, kinked every few metres: each segment sends
         // its own N-wave, and they arrive over seconds from 1 to 4 km away (Few, 1969).
-        shocks_.set_path(0, 1500.0); shocks_.set_path(1, 2600.0); shocks_.set_path(2, 4000.0);
+        air_path(0, 1500.0); air_path(1, 2600.0); air_path(2, 4000.0);
         shocks_on_ = true;
         nwave(0.006, 2.0, 0.0, 0);
         every(0.006, false, 420, 1.0, 0.0);
@@ -1130,7 +1146,7 @@ class Voice {
       case kSonicBoom: {
         // A fighter at Mach 1.4 at 9 km: a 120 ms N-wave and its ground reflection, the rise
         // smoothed by the turbulent air it came through.
-        shocks_.set_path(0, 400.0); shocks_.set_path(1, 400.0); shocks_.set_path(2, 3000.0);
+        air_path(0, 400.0); air_path(1, 400.0); air_path(2, 3000.0);
         nwave(0.12 / p.tune, 1.0);
         nwave(0.12 / p.tune, 0.4, 0.004, 1);
         for (int i = 0; i < 4; ++i) nwave(0.2, 0.06, 0.15 + 0.4 * i, 2);
@@ -1139,8 +1155,8 @@ class Voice {
       case kWhipCrack: {
         // The tip passes Mach 1 (about 1.2 times the speed of sound at the crack): a tiny N-wave,
         // tens of microseconds long, after the leather's swish.
-        shocks_.set_path(0, 2.0); shocks_.set_path(1, 2.0); shocks_.set_path(2, 30.0);
-        nwave(std::max(src::whitham_duration_s(1.2, 0.002, 0.02, 2.0), 3.0 / rate_), 4.0, 0.06);
+        air_path(0, 2.0); air_path(1, 2.0); air_path(2, 30.0);
+        nwave(std::max(src::whitham_duration_s(1.2, 0.002, 0.02, 2.0, sound_speed()), 3.0 / rate_), 4.0, 0.06);
         noise(0, Shape::Band, 1200.0, 0.8, 50.0, 80.0, 0.12);
         break;
       }
@@ -1290,7 +1306,7 @@ class Voice {
       }
       case kMachineGun: {
         blast(0.004, 8.0, 1, 1.0, 1.0, 0.0, 1.4, 1500.0, 0.35);
-        nwave(src::whitham_duration_s(2.5, 0.00762, 0.03, 5.0), 3.0, 0.0);
+        nwave(src::whitham_duration_s(2.5, 0.00762, 0.03, 5.0, sound_speed()), 3.0, 0.0);
         break;
       }
       case kThunder: {
@@ -1380,6 +1396,8 @@ class Voice {
   float particle_gain_ = 1.0f, shock_gain_ = 1.0f;
   float hp_pole_ = 0.0f, lp_pole_ = 0.0f, hp_state_ = 0.0f, lp_state_ = 0.0f, lp2_state_ = 0.0f, drive_ = 0.0f;
   int bits_ = 0;
+  float tail_air_pole_ = 0.0f;
+  std::array<float, 2> tail_lp_{};
   Pattern pattern_{};
   double siren_rps_ = 0.0, siren_target_ = 0.0, siren_phase_ = 0.0;
   int siren_ports_ = 10;

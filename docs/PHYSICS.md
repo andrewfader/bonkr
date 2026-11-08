@@ -75,16 +75,19 @@ dark, hard ones bright, and the high end dies faster than the low.
 - **Blast waves**: Friedlander's waveform, p(t) = Ps (1 - t/td) exp(-b t/td), with Kinney and
   Graham's peak overpressure and positive duration at the scaled distance Z = R / W^(1/3); the
   ground reflection; the terrain's echoes; and the scattered tail of many small reflections from
-  trees, walls and ground. Each path loses the air's ISO 9613-1 absorption over its length. A
-  microphone hears from 40 Hz up. Tune scales the charge: an octave down is eight times the TNT.
+  trees, walls and ground. Each path (and the scattered tail, the long way round) loses ISO
+  9613-1's absorption over its length at the Temperature and Humidity knobs' air, and the echoes'
+  delays follow that air's speed of sound: a distant cannon is duller on a dry day. A microphone
+  hears from 40 Hz up. Tune scales the charge: an octave down is eight times the TNT.
 - **N-waves** (Whitham): a supersonic body's pressure jumps up, falls straight through zero and
   jumps back; its duration grows as M d r^(1/4) / (c (M^2 - 1)^(3/8) l^(1/4)): a quarter of a
   millisecond for a rifle bullet, 120 ms for a sonic boom, tens of microseconds for a whip.
 - **Thunder** (Few): a kinked channel kilometres long, each segment sending its N-wave, arriving
   over seconds, bunched where the channel crosses the line of sight.
 - **A passing jet**: heard at the time its sound left it, so the emission clock runs at
-  1 / (1 + dr/dt / c) of the listener's and the Doppler shift falls out; the fan's whine radiates
-  forward, the jet's roar aft; 1/r spreading and the air over r.
+  1 / (1 + dr/dt / c) of the listener's and the Doppler shift falls out, c the speed of sound at
+  the Temperature knob (a cold day shifts it further); the fan's whine radiates forward, the
+  jet's roar aft; 1/r spreading and ISO 9613-1's absorption over r at the knobs' air.
 - **The vuvuzela**: lips locked to the horn's resonance near B-flat 3 let the breath through in
   pulses, heard through the cone's harmonic impedance peaks and its bell.
 - **The air-raid siren**: a rotor's ports chopping the air, the pitch ports times turns per

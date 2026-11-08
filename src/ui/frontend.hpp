@@ -50,8 +50,8 @@ const char* gui_help(clap_id id) {
     case kRoomSize: return "The room the kit plays in, from a vocal booth to a church, or none.";
     case kRoomAbsorption: return "How much the walls absorb: a stone church at a few percent, a curtained studio near the top.";
     case kMicDistance: return "How far the microphones stand from the kit: close is dry and bright; far away the room takes over and the air dulls the top.";
-    case kHumidity: return "The air's humidity: dry air absorbs the treble more over the way to the microphones.";
-    case kTemperature: return "The air's temperature: the speed of sound and the air's absorption.";
+    case kHumidity: return "The air's humidity: dry air absorbs the treble more over the way to the microphones, and over a blast's, a storm's or a passing jet's long path outdoors.";
+    case kTemperature: return "The air's temperature: the speed of sound (a jet's Doppler shift, an echo's delay, a mortar tube's note) and the air's absorption, in the room and outdoors.";
     case kMicPattern: return "The microphones' pattern: omni hears the room all round, cardioid less of it, figure-8 the front and back.";
     case kMicSetup: return "A stereo pair, or one microphone in mono.";
     case kPreset: return "Factory presets: a kit or a sound in a room, ready to play.";

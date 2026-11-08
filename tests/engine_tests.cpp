@@ -105,6 +105,16 @@ SCENARIO(the_advertised_tail_covers_the_decay) {
   CHECK(measure::db(measure::peak(Span(m, m.size() - 4800))) < measure::db(measure::peak(Span(m))) - 50.0, spec::fmt("tail %.1f s", tail));
 }
 
+SCENARIO(the_air_knobs_reach_the_outdoor_sounds) {
+  GIVEN("the big explosion through the engine, with the Humidity knob at 10% and at 70%, no room");
+  auto dry = rig::Engine::sound(dsp::kExplosion), humid = rig::Engine::sound(dsp::kExplosion);
+  dry.s.v[params::kHumidity] = 0.1; humid.s.v[params::kHumidity] = 0.7;
+  const auto a = dry.stroke(60, 0.8, 0.1, 2.5), b = humid.stroke(60, 0.8, 0.1, 2.5);
+  THEN("the explosion's own 900 m of air follows the knob: darker when dry");
+  const double ca = measure::spectral_centroid(Span(a), kRate, 13), cb = measure::spectral_centroid(Span(b), kRate, 13);
+  CHECK(ca < 0.9 * cb, spec::fmt("centroid %.0f Hz dry against %.0f Hz humid", ca, cb));
+}
+
 SCENARIO(the_converter_holds_and_quantises_at_the_machines_clock) {
   GIVEN("the SP-1200 converter on a tom");
   rig::Engine clean, sp;

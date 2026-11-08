@@ -85,6 +85,18 @@ Feature: The physics every sound is built from
     When the whine is measured as it approaches and as it leaves
     Then the approaching pitch is f / (1 - v cos/c) and the receding f / (1 + v cos/c)
 
+  # physics_tests :: a_cold_day_shifts_the_passing_jet_further
+  Scenario: a cold day shifts the passing jet further
+    Given the jet flyby on a day at -10 C (sound at 325 m/s) and at 40 C (355 m/s)
+    When the approaching whine is measured
+    Then each is shifted by its own day's speed of sound: higher when the air is cold
+
+  # physics_tests :: dry_air_dulls_what_comes_from_far_away
+  Scenario: dry air dulls what comes from far away
+    Given the big explosion 900 m away and the passing jet, in air at 20 C with 10% and with 70% humidity
+    Then ISO 9613-1 says dry air absorbs more of the treble over the path: both arrive darker when it is dry
+    Then and the model's corner for 900 m of air is where ISO 9613-1 takes 6 dB, lower in the dry air
+
   # physics_tests :: lips_buzz_a_vuvuzela_at_b_flat
   Scenario: lips buzz a vuvuzela at b flat
     Given the vuvuzela blown and held

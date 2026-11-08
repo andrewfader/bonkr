@@ -252,6 +252,39 @@ SCENARIO(a_passing_jet_is_doppler_shifted) {
   CHECK_NEAR(heard_out / recede, 1.0, 0.07, "recede");
 }
 
+SCENARIO(a_cold_day_shifts_the_passing_jet_further) {
+  GIVEN("the jet flyby on a day at -10 C (sound at 325 m/s) and at 40 C (355 m/s)");
+  auto cold = rig::play(0.8), hot = rig::play(0.8);
+  cold.celsius = -10.0; hot.celsius = 40.0;
+  const auto a = rig::voice(dsp::kJetFlyby, cold, 1.0), b = rig::voice(dsp::kJetFlyby, hot, 1.0);
+  const double cos0 = 420.0 / std::sqrt(420.0 * 420.0 + 90.0 * 90.0);
+  const auto approach = [&](double celsius) { return 2450.0 / (1.0 - 140.0 / dsp::air::speed_of_sound(celsius) * cos0); };
+  WHEN("the approaching whine is measured");
+  const double fa = rig::strongest_hz(Span(a, static_cast<size_t>(0.2 * kRate), static_cast<size_t>(0.5 * kRate)), kRate, approach(-10.0) * 0.9, approach(-10.0) * 1.1, 15);
+  const double fb = rig::strongest_hz(Span(b, static_cast<size_t>(0.2 * kRate), static_cast<size_t>(0.5 * kRate)), kRate, approach(40.0) * 0.9, approach(40.0) * 1.1, 15);
+  THEN("each is shifted by its own day's speed of sound: higher when the air is cold");
+  CHECK_NEAR(fa / approach(-10.0), 1.0, 0.03, "cold day");
+  CHECK_NEAR(fb / approach(40.0), 1.0, 0.03, "hot day");
+  CHECK(fa > fb * 1.03, spec::fmt("%.0f Hz cold against %.0f Hz hot", fa, fb));
+}
+
+SCENARIO(dry_air_dulls_what_comes_from_far_away) {
+  GIVEN("the big explosion 900 m away and the passing jet, in air at 20 C with 10% and with 70% humidity");
+  auto dry = rig::play(0.8), humid = rig::play(0.8);
+  dry.humidity = 0.1; humid.humidity = 0.7;
+  THEN("ISO 9613-1 says dry air absorbs more of the treble over the path: both arrive darker when it is dry");
+  for (int s : {dsp::kExplosion, dsp::kJetFlyby, dsp::kThunder}) {
+    const double len = s == dsp::kJetFlyby ? 6.0 : 3.0;
+    const auto a = rig::voice(s, dry, len), b = rig::voice(s, humid, len);
+    const double ca = measure::spectral_centroid(Span(a), kRate, 13), cb = measure::spectral_centroid(Span(b), kRate, 13);
+    CHECK(ca < 0.9 * cb, std::string(dsp::kSoundNames[s]) + spec::fmt(": centroid %.0f Hz dry against %.0f Hz humid", ca, cb));
+  }
+  THEN("and the model's corner for 900 m of air is where ISO 9613-1 takes 6 dB, lower in the dry air");
+  const double fd = dsp::src::air_cutoff_hz(900.0, 20.0, 0.1, kRate), fh = dsp::src::air_cutoff_hz(900.0, 20.0, 0.7, kRate);
+  CHECK_NEAR(dsp::air::absorption_db_per_m(fd, 20.0, 0.1) * 900.0, 6.0, 0.05, "6 dB at the dry corner");
+  CHECK(fd < fh, spec::fmt("corner %.0f Hz dry against %.0f Hz humid", fd, fh));
+}
+
 SCENARIO(lips_buzz_a_vuvuzela_at_b_flat) {
   GIVEN("the vuvuzela blown and held");
   const auto x = rig::voice(dsp::kVuvuzela, rig::play(0.8), 1.0);
