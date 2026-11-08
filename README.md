@@ -7,7 +7,7 @@ blast waves, shock waves and moving sources. It builds on Linux, Windows and mac
 editor on all three. It follows the model of [SCHRODR](https://github.com/andrewfader/schrodr),
 [FUZZBOI](https://github.com/andrewfader/fuzzboi), [YANES](https://github.com/andrewfader/yanes)
 and HONKR: a header-only physics engine, a thin CLAP shell, a native editor, and a suite that
-proves every claim from the audio. Unlike them, its quality gate is **recordings of the real
+proves every claim from the audio. Its quality gate is **recordings of the real
 instruments**: 211 recordings of 72 of its sounds, against which each must measure within the
 spread real instruments show (see [references/README.md](references/README.md)).
 
