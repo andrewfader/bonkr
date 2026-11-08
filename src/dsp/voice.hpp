@@ -327,7 +327,9 @@ class Voice {
       s.hz = hz;
       s.t60 = pl.t60 * decay * std::min(1.5, std::pow(hz / 1000.0, -pl.loss));
       const double edge = std::clamp(0.5 + 0.5 * p.position, 0.0, 1.0);
-      s.drive = std::pow(hz / 1000.0, -pl.tilt * (0.6 + 0.8 * edge)) * (0.5 + rng.unipolar()) * (rng.next() & 1 ? 1.0 : -1.0);
+      const double size = 0.5 + rng.unipolar();  // one draw per statement: one stream on every compiler
+      const double sign = rng.next() & 1 ? 1.0 : -1.0;
+      s.drive = std::pow(hz / 1000.0, -pl.tilt * (0.6 + 0.8 * edge)) * size * sign;
       // A thin plate radiates better as its bending waves speed up toward coincidence (some
       // 10 kHz for a millimetre of bronze): efficiency rising with frequency.
       s.radiate = std::sqrt(std::min(hz, 12000.0) / 1000.0);
@@ -381,7 +383,9 @@ class Voice {
     const double decay = p.decay * (1.0 - 0.9 * p.damping);
     for (int i = 0; i < want; ++i) {
       const double hz = all[static_cast<size_t>(std::min(count - 1, static_cast<int>((i + 0.5) * count / want)))];
-      spec[static_cast<size_t>(i)] = {hz, t60_1k * decay * std::pow(hz / 1000.0, -0.4), (0.4 + rng.unipolar()) * (rng.next() & 1 ? 1.0 : -1.0) * std::pow(hz / 1000.0, -0.3), 1.0};
+      const double size = 0.4 + rng.unipolar();
+      const double sign = rng.next() & 1 ? 1.0 : -1.0;
+      spec[static_cast<size_t>(i)] = {hz, t60_1k * decay * std::pow(hz / 1000.0, -0.4), size * sign * std::pow(hz / 1000.0, -0.3), 1.0};
     }
     normalise(spec.data(), want);
     bank_[static_cast<size_t>(b)].set(spec.data(), want);
@@ -1274,7 +1278,9 @@ class Voice {
       case kMaracas: case kShaker: case kCabasa: particles_.shake(0.3 + 0.9 * play_.velocity); break;
       case kGroupClap: {
         const size_t i = static_cast<size_t>(n % 2);
-        noise_[i].set(src::NoiseBand::Shape::Band, (900.0 + 900.0 * rng_.unipolar()) * play_.tune, 2.0 + 4.0 * rng_.unipolar(), 0.3, 60.0 * play_.decay, 1.0);
+        const double q = 2.0 + 4.0 * rng_.unipolar();
+        const double hz = (900.0 + 900.0 * rng_.unipolar()) * play_.tune;
+        noise_[i].set(src::NoiseBand::Shape::Band, hz, q, 0.3, 60.0 * play_.decay, 1.0);
         noise_[i].trigger(0.4 + 0.5 * rng_.unipolar());
         break;
       }
@@ -1294,7 +1300,11 @@ class Voice {
         hit(0, load, 1.4);
         modal::Striker button; button.alpha = 1.5; button.contact_ms = 0.05; button.restitution = 0.7;
         const int clinks = 1 + static_cast<int>(rng_.next() % 3);
-        for (int i = 0; i < clinks; ++i) contact_[1].add(impulse(button, 0.12 * (0.5 + rng_.unipolar())), 0.05, (0.05 + 0.35 * rng_.unipolar()) * rate_);
+        for (int i = 0; i < clinks; ++i) {
+          const double when = (0.05 + 0.35 * rng_.unipolar()) * rate_;
+          const double force = 0.12 * (0.5 + rng_.unipolar());
+          contact_[1].add(impulse(button, force), 0.05, when);
+        }
         break;
       }
       case kFireworkBurst: case kFireworkCrackle: {
@@ -1315,7 +1325,9 @@ class Voice {
         const double t = pattern_.t / rate_;
         const double clap = std::exp(-std::pow((t - 0.35) / 0.25, 2.0)) + 0.6 * std::exp(-std::pow((t - 1.4) / 0.4, 2.0));
         const int path = t < 0.6 ? 0 : t < 1.8 ? 1 : 2;
-        nwave((0.004 + 0.01 * rng_.unipolar()) * (1.0 + t), (0.15 + clap) * (0.4 + rng_.unipolar()) * std::exp(-t * 0.5), 0.0, path);
+        const double amp = (0.15 + clap) * (0.4 + rng_.unipolar()) * std::exp(-t * 0.5);
+        const double length = (0.004 + 0.01 * rng_.unipolar()) * (1.0 + t);
+        nwave(length, amp, 0.0, path);
         pattern_.interval = std::max(1.0, rate_ * 0.006 * (1.0 + t * 1.2));
         break;
       }

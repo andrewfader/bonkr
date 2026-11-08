@@ -190,7 +190,9 @@ class Contact {
     Rng rng(seed);
     for (int i = 0; i < s.bristles; ++i) {
       const double when = delay + rng.unipolar() * s.spread_ms * 0.001 * rate_;
-      add(impulse / s.bristles * (0.5 + rng.unipolar()), ms * (0.6 + 0.8 * rng.unipolar()), when);
+      const double spread = 0.6 + 0.8 * rng.unipolar();  // drawn first: one stream on every compiler
+      const double share = 0.5 + rng.unipolar();
+      add(impulse / s.bristles * share, ms * spread, when);
     }
   }
   float next() {
