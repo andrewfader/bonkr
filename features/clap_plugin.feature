@@ -25,6 +25,12 @@ Feature: The plug-in through the CLAP ABI
     Given two instances from one module
     Then a change in one does not touch the other
 
+  # plugin_smoke :: a_reset_instance_plays_a_phrase_as_it_did_the_first_time
+  Scenario: a reset instance plays a phrase as it did the first time
+    Given an instance that has played a phrase on the kit
+    When the host resets it and plays the phrase again
+    Then every block sounds exactly as it did the first time
+
   # note_tests :: a_clap_note_on_strikes_the_kit_and_it_rings_out
   Scenario: a clap note on strikes the kit and it rings out
     Given the default kit (studio rock), given a CLAP note on for the snare (D1, key 38)

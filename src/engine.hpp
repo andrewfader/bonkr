@@ -134,6 +134,9 @@ class Engine {
     room_.reset(); limiter_.reset(); converter_.reset(); compressor_.reset(); gate_.reset();
     pending_count_ = 0; held_.fill(false); repeat_left_.fill(-1.0); key_delay_.fill(0.0);
     peak_l_ = peak_r_ = 0.0f; clipped_ = false; frame_ = 0;
+    // Each hit's variation is drawn from its count since the reset, so a host that resets before
+    // a bounce hears the same hits every time.
+    counter_ = 0;
   }
 
   // --- the transport ---
