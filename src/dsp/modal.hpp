@@ -228,7 +228,7 @@ class ModeBank {
   static constexpr int kMaxModes = 72;
   void prepare(double rate) { rate_ = rate; clear(); }
   void clear() {
-    count_ = 0; glide_ = 1.0; amplitude_ = 0.0; damp_ = 1.0;
+    count_ = 0; glide_ = 1.0; amplitude_ = 0.0; damp_ = 1.0; tick_ = 0;
     for (auto& m : modes_) m = Mode{};
   }
   void silence() { for (int i = 0; i < count_; ++i) { modes_[static_cast<size_t>(i)].re = modes_[static_cast<size_t>(i)].im = 0.0f; } amplitude_ = 0.0; }
