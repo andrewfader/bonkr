@@ -243,7 +243,9 @@ class Voice {
     double reso = 0.0;          // the other head's f01 against this one's (0: one head)
     double coupling = 0.35;     // the enclosed air's coupling of the two heads' breathing modes
   };
-  void membrane(int b, const Membrane& m, const Play& p) {
+  // `extra`: modes of what the head drives besides itself (the shell, the air inside), with
+  // drives stated against the head's normalised strike.
+  void membrane(int b, const Membrane& m, const Play& p, const modal::ModeSpec* extra = nullptr, int n_extra = 0) {
     const double f01 = modal::membrane_f01(m.diameter, m.tension, m.sigma) * p.tune;
     const auto& table = modal::membrane_modes();
     std::array<modal::ModeSpec, modal::ModeBank::kMaxModes> spec{};
@@ -278,6 +280,7 @@ class Voice {
       spec[static_cast<size_t>(n++)] = s;
     }
     normalise(spec.data(), n);
+    for (int i = 0; i < n_extra && n < modal::ModeBank::kMaxModes; ++i) spec[static_cast<size_t>(n++)] = extra[i];
     bank_[static_cast<size_t>(b)].set(spec.data(), n);
     bank_[static_cast<size_t>(b)].set_nonlinearity(m.beta * p.tension);
   }
@@ -509,29 +512,50 @@ class Voice {
         if (sound_ == kKickVintage) { m.diameter = 0.559; m.tension = 1050.0; m.t60 = 1.2; m.reso = 1.05; m.beta = 0.14; m.sigma = modal::kHeadSingle10mil; }
         if (sound_ == kKickJazz) { m.diameter = 0.457; m.tension = 1500.0; m.t60 = 1.0; m.reso = 1.0; m.beta = 0.12; m.sigma = modal::kHeadSingle10mil; }
         if (sound_ == kKickDeep) { m.diameter = 0.660; m.tension = 820.0; m.t60 = 1.4; m.reso = 1.1; m.beta = 0.16; }
-        m.position = 0.25; m.loss = 0.9; m.max_ratio = 9.0;
+        m.position = 0.5; m.loss = 0.3; m.max_ratio = 5.02873; m.coupling = 0.59255;
         membrane(0, m, p);
+        {
+          // The air inside the shell: its transverse modes (1.841, 3.054, 3.832 c / pi D) and its
+          // axial one (c / 2 L), rung by the batter and heard through the resonant head.
+          const double depth = sound_ == kKickDeep ? 0.46 : sound_ == kKickStudio ? 0.41 : 0.36;
+          const double c = sound_speed(), f0 = 1.841 * c / (kPi * m.diameter);
+          const double ax = c / (2.0 * depth) / f0;
+          const double r[] = {1.0, ax, 3.054 / 1.841, std::sqrt(1.0 + ax * ax), 3.832 / 1.841};
+          const double t[] = {0.0977908, 0.0977908 * 0.8, 0.0977908 * 0.7, 0.0977908 * 0.6, 0.0977908 * 0.5};
+          const double g[] = {1.0, 0.8, 0.6, 0.5, 0.4};
+          table(1, f0, r, t, g, 5, p);
+          couple_ = true; couple_gain_ = 1.0f; bank_out_[1] = static_cast<float>(2.1);
+        }
         // The beater on the head: the head's high modes beyond the bank, heard as the click.
-        noise(0, Shape::Band, sound_ == kKickJazz ? 2200.0 : 3000.0, 0.5, 0.2, 25.0, 0.0, Drive::Force, 4.0);
-        noise(1, Shape::Band, 700.0, 0.7, 0.2, 50.0, 0.0, Drive::Force, 6.0);
-        tone(25.0, 0.0);
+        noise(0, Shape::Band, sound_ == kKickJazz ? 2200.0 : 5207.05, 0.5, 0.2, 23.922, 0.0, Drive::Force, 4.53);
+        noise(1, Shape::Band, 150.0, 0.7, 0.2, 62.8625, 0.0, Drive::Force, 10.9916);
+        tone(25.0, 4641.0);
         break;
       }
       // --- snares -------------------------------------------------------------------------------
       case kSnareMaple: case kSnareBrass: case kSnareFat: case kSnareRimshot: case kSnareCrossStick: case kSnareBrush: case kSnareBrushSweep: {
         Membrane m;
-        m.diameter = 0.356; m.tension = 4000.0; m.t60 = 0.55; m.reso = 1.45; m.beta = 0.10; m.loss = 0.6;
+        m.diameter = 0.356; m.tension = 3351.73; m.t60 = 0.55; m.reso = 1.65825; m.beta = 0.10; m.loss = 1.12843;
+        m.coupling = 0.35; m.position = 0.35; m.max_ratio = 16.0;
         if (sound_ == kSnareBrass) { m.diameter = 0.330; m.tension = 4600.0; m.t60 = 0.6; }
         if (sound_ == kSnareFat) { m.tension = 1500.0; m.t60 = 0.35; m.sigma = modal::kHeadTwoPly7mil; }
-        if (sound_ == kSnareRimshot) m.position = 0.85;
+        if (sound_ == kSnareRimshot) m.position = 0.789398;
         if (sound_ == kSnareCrossStick) { m.position = 0.95; m.t60 = 0.2; }
-        membrane(0, m, p);
+        {
+          // The air inside the shell (5.5 in deep): its first transverse and axial modes.
+          const double c = sound_speed(), f0 = 1.841 * c / (kPi * m.diameter), ax = c / (2.0 * 0.14);
+          const double hz[] = {f0, f0 * 3.054 / 1.841, ax, std::sqrt(f0 * f0 + ax * ax), f0 * 3.832 / 1.841};
+          std::array<modal::ModeSpec, 5> cav{};
+          for (size_t i = 0; i < cav.size(); ++i) cav[i] = {hz[i] * p.tune, 0.08 * p.decay * (1.0 - 0.85 * p.damping), 0.9401 * (1.0 - 0.12 * static_cast<double>(i)), 1.0};
+          membrane(0, m, p, cav.data(), static_cast<int>(cav.size()));
+        }
         wires_on_ = true;
         wires_.configure(p.snare_tension, p.snares * (sound_ == kSnareCrossStick ? 0.12 : 1.0), (sound_ == kSnareFat ? 70.0 : 45.0) * p.decay);
-        wire_scale_ = 1.2;
+        wire_scale_ = 1.15858;
         // The stick on the head, and the dense modes of the head and shell above the bank.
-        noise(0, Shape::Band, 2500.0, 0.6, 0.1, 12.0, 0.0, Drive::Force, 3.0);
-        noise(2, Shape::Band, 750.0, 0.6, 0.3, 70.0, 0.0, Drive::Force, 14.0);
+        noise(0, Shape::Band, 2007.8, 0.6, 0.1, 12.0, 0.0, Drive::Force, 1.02216);
+        noise(2, Shape::Band, 804.623, 0.6, 0.3, 52.0014, 0.0, Drive::Force, 14.0);
+        tone(20.0, 0.0);
         if (sound_ == kSnareRimshot || sound_ == kSnareCrossStick) {
           // The stick across the hoop: the shell and the rim ring, sharp and woody.
           static constexpr double kR[] = {1.0, 1.47, 2.09, 2.56, 3.39, 4.1};
@@ -565,25 +589,44 @@ class Voice {
       }
       // --- hi-hats and cymbals ----------------------------------------------------------------------
       case kHatClosed: case kHatPedal: case kHatOpen: case kHatHalf: {
-        Plate pl; pl.radius = 0.178; pl.thickness = 0.0011; pl.curvature_hz = 260.0; pl.low_hz = 150.0;
-        pl.t60 = sound_ == kHatOpen ? 3.5 : sound_ == kHatHalf ? 0.6 : sound_ == kHatPedal ? 0.18 : 0.3;
-        pl.loss = 0.3;
+        const bool open = sound_ == kHatOpen;
+        Plate pl; pl.radius = 0.178; pl.thickness = 0.0011; pl.curvature_hz = 129.625; pl.low_hz = 238.2; pl.high_hz = 17305.0;
+        pl.t60 = sound_ == kHatOpen ? 4.55875 : sound_ == kHatHalf ? 0.6 : sound_ == kHatPedal ? 0.114633 : 0.3;
+        pl.loss = (open ? 0.678 : 0.280792); pl.tilt = (open ? -0.7 : 0.822269);
         plate(0, pl, p, body_seed);
         // The cascade into the top octave, and the two plates' clatter against each other.
-        noise(0, Shape::High, 8000.0, 0.7, 0.1, 3.0, 0.0, Drive::Cascade, 0.5);
-        noise(1, Shape::Band, sound_ == kHatPedal ? 8000.0 : 9000.0, 0.6, 0.3, sound_ == kHatPedal ? 70.0 : 45.0, sound_ == kHatPedal ? 2.5 : 1.2, Drive::Trigger);
+        noise(0, Shape::High, (open ? 3000.0 : 6652.5), 0.7, 0.1, (open ? 1.0 : 8.929), 0.0, Drive::Cascade, (open ? 0.85 : 1.82382), false);
+        if (sound_ == kHatPedal) noise(1, Shape::Band, 11221.8, 0.6, 0.3, 200.0, 3.36632, Drive::Trigger);
+        else noise(1, Shape::Band, 8306.41, 0.6, 0.3, sound_ == kHatOpen ? 93.657 : 150.0, sound_ == kHatOpen ? 1.2 : 3.12234, Drive::Trigger);
         if (sound_ == kHatHalf) noise(2, Shape::Band, 6500.0, 1.2, 1.0, 500.0, 0.25);
-        if (sound_ == kHatPedal) noise(2, Shape::Band, 300.0, 0.8, 4.0, 50.0, 10.0);  // the plates' "chick" as they close
-        tone(250.0, 0.0);
+        if (sound_ == kHatPedal) noise(2, Shape::Band, 150.0, 0.8, 4.0, 138.235, 16.678);  // the plates' "chick" as they close
+        {
+          // The pair on its rod and clutch: the stand's own few low, heavily damped modes.
+          const double r[] = {1.0, 2.37, 4.1};
+          const double t[] = {(open ? 0.167683 : 0.145682), (open ? 0.167683 : 0.145682) * 0.7, (open ? 0.167683 : 0.145682) * 0.5};
+          const double g[] = {1.0, 0.7, 0.5};
+          table(1, (open ? 86.8985 : 178.8), r, t, g, 3, p);
+          couple_ = true; couple_gain_ = 1.0f; bank_out_[1] = static_cast<float>((open ? 4.0 : 1.07366));
+        }
+        tone((open ? 40.0 : 98.4716), 0.0);
         break;
       }
       case kCrash16: case kCrash18: case kRide: case kRideBell: case kChina: case kSplash: case kCymbalSwell: {
         Plate pl;
         double wash = 0.18, bloom_ms = 8.0, wash_hz = 6000.0;  // bloom: the cascade's time constant
+        double wash_hi = 0.8, ping = sound_ == kRide ? 0.4 : 0.15, ping_hz = 5000.0, hp = sound_ == kRideBell ? 300.0 : 150.0;
         switch (sound_) {
           case kCrash16: pl.radius = 0.203; pl.thickness = 0.0009; pl.t60 = 2.6; break;
-          case kCrash18: case kCymbalSwell: pl.radius = 0.229; pl.thickness = 0.0010; pl.t60 = 3.4; break;
-          case kRide: pl.radius = 0.254; pl.thickness = 0.0016; pl.t60 = 6.0; pl.tilt = 0.6; wash = 0.04; bloom_ms = 12.0; break;
+          case kCrash18: case kCymbalSwell:
+            pl.radius = 0.229; pl.thickness = 0.00104498; pl.t60 = 2.84232; pl.low_hz = 70.0; pl.high_hz = 14305.0; pl.loss = 0.6705;
+            pl.tilt = 0.0; pl.curvature_hz = 76.17; wash = 0.285; bloom_ms = 19.6025; wash_hz = 4413.14; wash_hi = 0.9575;
+            ping = 0.067228; ping_hz = 5000.0; hp = 126.942;
+            break;
+          case kRide:
+            pl.radius = 0.254; pl.thickness = 0.0017715; pl.t60 = 5.58738; pl.tilt = 0.7715; wash = 0.04; bloom_ms = 21.8;
+            ping = 0.569785; pl.high_hz = 11546.5; pl.low_hz = 70.0; pl.loss = 0.590166; wash_hz = 3105.18; wash_hi = 1.5;
+            ping_hz = 5000.0; pl.curvature_hz = 180.0;
+            break;
           case kRideBell: pl.radius = 0.254; pl.thickness = 0.0018; pl.t60 = 5.0; wash = 0.03; pl.low_hz = 300.0; pl.high_hz = 8000.0; break;
           case kChina: pl.radius = 0.229; pl.thickness = 0.0009; pl.t60 = 2.0; pl.irregularity = 0.12; wash = 0.45; wash_hz = 4200.0; bloom_ms = 5.0; break;
           case kSplash: pl.radius = 0.127; pl.thickness = 0.0007; pl.t60 = 1.0; pl.curvature_hz = 600.0; wash = 0.24; bloom_ms = 4.0; break;
@@ -591,9 +634,9 @@ class Voice {
         }
         plate(0, pl, p, body_seed);
         noise(0, Shape::Band, wash_hz, 0.6, 0.1, bloom_ms, 0.0, Drive::Cascade, wash);
-        noise(1, Shape::High, 9500.0, 0.7, 0.1, bloom_ms * 0.7, 0.0, Drive::Cascade, wash * 0.8, true);
+        noise(1, Shape::High, 9500.0, 0.7, 0.1, bloom_ms * 0.7, 0.0, Drive::Cascade, wash * wash_hi, true);
         // The stick's ping on the bow.
-        noise(2, Shape::High, 5000.0, 0.7, 0.05, 6.0, 0.0, Drive::Force, sound_ == kRide ? 0.4 : 0.15);
+        noise(2, Shape::High, ping_hz, 0.7, 0.05, 6.0, 0.0, Drive::Force, ping);
         if (sound_ == kRideBell) {
           static constexpr double kR[] = {1.0, 2.09, 2.66, 3.92, 5.1};
           static constexpr double kT[] = {4.0, 3.0, 2.5, 1.8, 1.2};
@@ -602,7 +645,7 @@ class Voice {
           couple_ = true; couple_gain_ = 1.0f; bank_out_[1] = 3.0f;
         }
         if (sound_ == kCymbalSwell) every(0.07, true, 0, 0.15);
-        tone(sound_ == kRideBell ? 300.0 : 150.0, 0.0);
+        tone(hp, 0.0);
         break;
       }
       // --- the orchestra ----------------------------------------------------------------------------
@@ -1174,19 +1217,22 @@ class Voice {
     switch (sound_) {
       case kKickStudio: case kKickVintage: case kKickJazz: case kKickDeep: {
         modal::Striker s = striker_of(play_.striker == kAsPlayed ? kHardMallet : play_.striker);
-        if (play_.striker == kAsPlayed) { s.alpha = 2.5; s.contact_ms = 2.2; }
+        if (play_.striker == kAsPlayed) { s.alpha = 2.5; s.contact_ms = 0.8; }
         s.contact_ms *= play_.hardness;
         hit(0, s);
         break;
       }
-      case kSnareMaple: case kSnareBrass: case kSnareFat: case kSnareRimshot: case kTomHigh: case kTomMid: case kTomFloor: case kTomFloorLow:
+      case kSnareMaple: case kSnareBrass: case kSnareFat: case kSnareRimshot:
+        hit(0, striker(kStick, 1.0));
+        break;
+      case kTomHigh: case kTomMid: case kTomFloor: case kTomFloorLow:
         hit(0, striker(kStick, 1.0));
         break;
       case kSnareCrossStick: hit(0, striker(kStick, 0.3), 0.25); break;
       case kSnareBrush: hit(0, striker(kBrush, 1.0)); break;
       case kSnareBrushSweep: if (first) noise_[0].trigger(0.3 + 0.7 * v); break;
       case kHatClosed: case kHatOpen: case kHatHalf: case kCrash16: case kCrash18: case kRide: case kChina: case kSplash:
-        hit(0, striker(kStick, 0.1));
+        hit(0, striker(kStick, sound_ == kHatClosed || sound_ == kHatOpen ? 0.369325 : sound_ == kCrash18 ? 0.18225 : sound_ == kRide ? 0.0694964 : 0.1));
         if (sound_ == kHatClosed || sound_ == kHatOpen || sound_ == kHatHalf) { noise_[1].trigger(v); if (sound_ == kHatHalf) noise_[2].trigger(v); }
         break;
       case kHatPedal: hit(0, striker(kStick, 0.05), 0.3); noise_[1].trigger(0.5 + 0.5 * v); noise_[2].trigger(0.5 + 0.5 * v); break;  // the plates meet
