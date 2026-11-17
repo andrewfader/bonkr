@@ -307,6 +307,9 @@ class Voice {
     double irregularity = 0.04;   // hand hammering and lathing: each mode's random shift
     double beta = 0.0;
     int modes = 72;
+    // The modes' random exchange of energy: each oscillator above blur_from_hz spreads into a
+    // band `blur` of its own frequency wide (see ModeSpec::blur_hz). 0 leaves pure lines.
+    double blur = 0.0, blur_from_hz = 700.0;
   };
   void plate(int b, const Plate& pl, const Play& p, uint32_t seed) {
     // Every free-plate mode up to the top, then an even spread of them across log frequency.
@@ -336,6 +339,8 @@ class Voice {
       // A thin plate radiates better as its bending waves speed up toward coincidence (some
       // 10 kHz for a millimetre of bronze): efficiency rising with frequency.
       s.radiate = std::sqrt(std::min(hz, 12000.0) / 1000.0);
+      // The lowest modes stand apart and ring as lines (the cymbal's pitch); the crowd above them does not.
+      if (pl.blur > 0.0 && hz > pl.blur_from_hz) s.blur_hz = pl.blur * hz * std::min(1.0, (hz - pl.blur_from_hz) / pl.blur_from_hz);
       spec[static_cast<size_t>(i)] = s;
     }
     normalise(spec.data(), want);
@@ -593,6 +598,7 @@ class Voice {
         Plate pl; pl.radius = 0.178; pl.thickness = 0.0011; pl.curvature_hz = 129.625; pl.low_hz = 238.2; pl.high_hz = 17305.0;
         pl.t60 = sound_ == kHatOpen ? 4.55875 : sound_ == kHatHalf ? 0.6 : sound_ == kHatPedal ? 0.114633 : 0.3;
         pl.loss = (open ? 0.678 : 0.280792); pl.tilt = (open ? -0.7 : 0.822269);
+        pl.blur = 0.008; pl.blur_from_hz = 300.0;  // recorded hats show no line more than 10 to 18 dB over their wash
         plate(0, pl, p, body_seed);
         // The cascade into the top octave, and the two plates' clatter against each other.
         noise(0, Shape::High, (open ? 3000.0 : 6652.5), 0.7, 0.1, (open ? 1.0 : 8.929), 0.0, Drive::Cascade, (open ? 0.85 : 1.82382), false);
@@ -632,6 +638,10 @@ class Voice {
           case kSplash: pl.radius = 0.127; pl.thickness = 0.0007; pl.t60 = 1.0; pl.curvature_hz = 600.0; wash = 0.24; bloom_ms = 4.0; break;
           default: break;
         }
+        // How far each mode's line is spread: a ride's and a crash's low partials still stand out
+        // of the wash in the recordings (20 to 30 dB), a thin splash's hardly at all (13).
+        pl.blur = sound_ == kSplash ? 0.02 : sound_ == kChina ? 0.006 : 0.002;
+        pl.blur_from_hz = 400.0;
         plate(0, pl, p, body_seed);
         noise(0, Shape::Band, wash_hz, 0.6, 0.1, bloom_ms, 0.0, Drive::Cascade, wash);
         noise(1, Shape::High, 9500.0, 0.7, 0.1, bloom_ms * 0.7, 0.0, Drive::Cascade, wash * wash_hi, true);
@@ -701,7 +711,7 @@ class Voice {
         break;
       }
       case kClashCymbals: {
-        Plate pl; pl.radius = 0.229; pl.thickness = 0.0012; pl.t60 = 3.5; pl.tilt = 0.25;
+        Plate pl; pl.radius = 0.229; pl.thickness = 0.0012; pl.t60 = 3.5; pl.tilt = 0.25; pl.blur = 0.004; pl.blur_from_hz = 400.0;
         plate(0, pl, p, body_seed);
         noise(0, Shape::Band, 5500.0, 0.6, 0.1, 15.0, 0.0, Drive::Cascade, 0.12);
         noise(1, Shape::High, 9000.0, 0.7, 0.1, 20.0, 0.0, Drive::Cascade, 0.1, true);

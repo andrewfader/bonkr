@@ -22,19 +22,20 @@ using Map = std::array<Slot, 128>;
 // The converter each kit was heard through (see machine.hpp; 0 is none).
 enum Converter : int { kConvKit, kConvClean, kConvLinn, kConvDmx, kConvSp1200, kConvMpc60, kConvHr16, kConverterCount };
 
-constexpr int kKitCount = 20;
+constexpr int kKitCount = 21;
 constexpr const char* kKitNames[kKitCount] = {
     "Studio rock", "Jazz brushes", "Funk, dry", "Big room", "Gated 80s", "Orchestral", "Latin", "Taiko",
     "World hand drums", "TR-808", "TR-909", "CR-78", "LinnDrum", "Oberheim DMX", "E-mu SP-1200", "Akai MPC60",
-    "Alesis HR-16", "Junkyard", "Foley and machines", "Artillery and fireworks"};
+    "Alesis HR-16", "Junkyard", "Foley and machines", "Artillery and fireworks", "Psych rock"};
 enum Kit : int {
   kStudioRock, kJazz, kFunk, kBigRoom, kGated80s, kOrchestral, kLatin, kTaiko, kWorld, kKit808, kKit909, kKitCr78,
-  kLinn, kDmx, kSp1200, kMpc60, kHr16, kJunkyard, kFoley, kArtillery
+  kLinn, kDmx, kSp1200, kMpc60, kHr16, kJunkyard, kFoley, kArtillery, kPsychRock
 };
 // Each kit's own converter.
 constexpr std::array<int, kKitCount> kKitConverter{
     kConvClean, kConvClean, kConvClean, kConvClean, kConvClean, kConvClean, kConvClean, kConvClean, kConvClean,
-    kConvClean, kConvClean, kConvClean, kConvLinn, kConvDmx, kConvSp1200, kConvMpc60, kConvHr16, kConvClean, kConvClean, kConvClean};
+    kConvClean, kConvClean, kConvClean, kConvLinn, kConvDmx, kConvSp1200, kConvMpc60, kConvHr16, kConvClean, kConvClean, kConvClean,
+    kConvClean};
 
 inline void put(Map& m, int key, int sound, float tune = 0.0f, float level = 0.0f, float pan = 0.0f, int choke = 0) {
   m[static_cast<size_t>(key)] = Slot{sound, tune, level, pan, choke};
@@ -234,6 +235,17 @@ inline Map make(int kit) {
       put(m, 47, kFireworkWhistle, 0, -6, -0.2f); put(m, 48, kFireworkBurst, 3.0f, -2, -0.3f); put(m, 49, kThunder, 0, 0); put(m, 50, kSonicBoom, 0, 0);
       put(m, 51, kFireworkCrackle, 2.0f, -4, -0.4f); put(m, 52, kExplosion, 3.0f, 0); put(m, 53, kWhipCrack, 0, -4, 0.3f);
       put(m, 54, kSiren, 0, -6, 0.0f); put(m, 56, kTelephone, 0, -6, 0.2f);
+      break;
+    case kPsychRock:
+      // Balanced as the drums sit on late-60s-style rock records (drum stems separated from Super
+      // Furry Animals, Black Angels and Allah-Las albums): most of the energy in the kick and the
+      // drums' shells from 60 to 250 Hz, the snare a little under the kick, and the hats and cymbals
+      // some 6 dB further back than a close-miked studio kit carries them.
+      s.kick = kKickVintage; s.kick2 = kKickDeep; s.snare = kSnareFat; s.snare2 = kSnareMaple; s.crash = kCrash18; s.tom_tune = -1.0f;
+      drum_set(m, s);
+      for (int key : {37, 38, 40}) m[static_cast<size_t>(key)].level -= 1.5f;
+      for (int key : {41, 43, 45, 47, 48, 50}) m[static_cast<size_t>(key)].level -= 2.0f;
+      for (int key : {42, 44, 46, 49, 51, 52, 53, 55, 57, 59}) m[static_cast<size_t>(key)].level -= 6.0f;
       break;
     default: break;
   }

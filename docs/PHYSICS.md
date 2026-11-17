@@ -54,6 +54,16 @@ square of the amplitude. BONKR feeds a high-band noise whose amplitude follows k
 constant of a few milliseconds (hundreds for a tam-tam, whose swell is famous): soft strokes are
 dark, hard ones bright, and the high end dies faster than the low.
 
+**Cymbals' crowd of modes**: a real cymbal has thousands of modes and BONKR's plate has 72, so
+each oscillator stands for a cluster of them. Left as pure lines they ring like a bell: measured
+over 50 to 400 ms after the stroke, the model's 20 strongest lines between 600 Hz and 3 kHz stood
+28 to 46 dB over the spectrum around them, where recorded hi-hats show 10 to 18 dB, crashes 18 to
+28 and rides 21 to 31. So each mode above a few hundred hertz has its amplitude wander at random
+(the modes of a thin plate exchange energy chaotically), which spreads its line into a band a
+fraction of its frequency wide (`Plate::blur`: 0.008 for hats, 0.002 for crashes and rides, 0.02
+for a splash). The lowest modes stay pure, as they do in the recordings. `physics_tests` holds
+each cymbal to the most bell-like of its recordings.
+
 **Damping** (a hand, a felt, a pillow, the hi-hat's pedal) shortens every mode, the high ones most.
 
 ## What is not a single body (src/dsp/sources.hpp)

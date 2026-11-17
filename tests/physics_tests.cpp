@@ -179,6 +179,26 @@ SCENARIO(a_cymbal_is_dense_and_its_highs_bloom) {
   CHECK(soft_high < high, spec::fmt("%.2f soft against %.2f firm", soft_high, high));
 }
 
+SCENARIO(cymbals_and_hats_hiss_rather_than_ring_like_bells) {
+  GIVEN("the kit's hi-hats and cymbals, each struck firmly, heard from 50 to 400 ms after the stroke");
+  struct Case { int sound; double low, high; const char* name; };
+  // Each bar is the most bell-like of the sound's reference recordings (references/manifest.tsv),
+  // measured the same way: from 600 Hz to 3 kHz, where a bell's pitch is heard, and from 1.5 to 12 kHz.
+  const Case cases[] = {{dsp::kHatClosed, 19.0, 27.0, "closed hat"}, {dsp::kHatOpen, 20.0, 23.0, "open hat"}, {dsp::kHatHalf, 20.0, 23.0, "half-open hat"},
+                        {dsp::kCrash16, 28.0, 32.0, "16 inch crash"}, {dsp::kCrash18, 28.0, 32.0, "18 inch crash"}, {dsp::kRide, 32.0, 39.0, "ride"},
+                        {dsp::kChina, 30.0, 33.0, "china"}, {dsp::kSplash, 15.0, 19.0, "splash"}};
+  THEN("no partial stands further over the wash around it than the strongest lines of a recorded one do");
+  for (const Case& c : cases) {
+    const auto x = rig::voice(c.sound, rig::play(0.8), 0.6);
+    const Span heard(x, static_cast<size_t>(0.05 * kRate), static_cast<size_t>(0.35 * kRate));
+    const double low = rig::line_prominence_db(heard, kRate, 600.0, 3000.0), high = rig::line_prominence_db(heard, kRate);
+    CHECK(low < c.low, std::string(c.name) + spec::fmt(": 600 Hz to 3 kHz, its 20 strongest lines stand %.1f dB over the wash (recordings: at most %.0f)", low, c.low));
+    CHECK(high < c.high, std::string(c.name) + spec::fmt(": 1.5 to 12 kHz, %.1f dB (recordings: at most %.0f)", high, c.high));
+    // Still a cymbal, not hiss: steady noise measures about 9.5 dB this way.
+    CHECK(low > 10.5, std::string(c.name) + spec::fmt(": its low partials can still be told from noise, %.1f dB", low));
+  }
+}
+
 SCENARIO(blasts_follow_kinney_and_graham) {
   GIVEN("Kinney and Graham's fits");
   THEN("overpressure falls with scaled distance and is 0.0986 atmospheres at 10 m/kg^(1/3)");

@@ -29,12 +29,12 @@ spread real instruments show (see [references/README.md](references/README.md)).
 | Machines and the environment | an electromechanical telephone bell, a washing machine, a jet flyby (Doppler), a vuvuzela, an air-raid siren |
 | Fireworks and artillery | firework launch, burst, crackle and whistle; the 1812 cannon, a howitzer, a mortar, a rifle, a machine gun, a grenade, a big explosion, thunder, a sonic boom, a whip crack |
 
-**Twenty kits** on the General MIDI drum map (kick on C1, snare on D1, hats on F#1, G#1, A#1,
+**Twenty-one kits** on the General MIDI drum map (kick on C1, snare on D1, hats on F#1, G#1, A#1,
 cymbals and Latin percussion above), so any GM drum part plays any of them: studio rock, jazz
 brushes, funk, a big room, gated 80s, orchestral, Latin, taiko, world hand drums, the TR-808,
 TR-909 and CR-78, the LinnDrum, Oberheim DMX, E-mu SP-1200, Akai MPC60 and Alesis HR-16 (acoustic
 models through each machine's converter), a junkyard, foley and machines, artillery and
-fireworks. Or play **one sound across the keyboard**, C4 at its own pitch.
+fireworks, and a psych rock kit balanced to drum stems of rock records (cymbals well behind the drums). Or play **one sound across the keyboard**, C4 at its own pitch.
 
 **The player**: the striker (the one native to each sound, or a stick, felt mallet, hand, brush, rods or hard
 mallet) meeting the surface by Hertzian contact, its hardness, where it lands, how velocity
@@ -46,7 +46,7 @@ choke. **The studio**: the listen-mic compressor and a gate on the room, for the
 the early 1980s. **The room and its air**, as in HONKR (room size, absorption, microphone distance, pattern and setup, humidity, temperature); the same air is what the blasts, the thunder and the passing jet cross outdoors, so a distant cannon is duller on a dry day. Chokes from the host (CLAP note choke) or
 an electronic kit's cymbal grab (polyphonic pressure).
 
-**47 presets**, among them "In the Air Tonight toms", "Gated snare, 1985", "Stairwell drums
+**48 presets**, among them "In the Air Tonight toms", "Gated snare, 1985", "Stairwell drums
 (Levee)", "808 boom, long and driven", "909 house, swung", "SP-1200 boom bap", "MPC60 swing",
 "1812 Overture cannons", "Jet flyby", "Thunder", "Telephone bell", "Vuvuzela", "Air-raid siren",
 "Metal pipe, dropped", "Ratchet (grogger)" and "Fireworks finale", each held to the [quality

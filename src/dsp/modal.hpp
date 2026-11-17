@@ -221,6 +221,11 @@ struct ModeSpec {
   double t60 = 1.0;      // seconds
   double drive = 1.0;    // the mode's shape where it is struck
   double radiate = 1.0;  // the mode's share of what is heard
+  // A thin plate's modes do not ring alone: above a few hundred hertz they are so many and so
+  // strongly coupled (Touze and Chaigne's wave turbulence) that each exchanges its energy with
+  // its neighbours at random. One oscillator here stands for a cluster of them: its amplitude
+  // wanders, which spreads its line into a band this many hertz wide. 0 is a single pure mode.
+  double blur_hz = 0.0;
 };
 
 class ModeBank {
@@ -228,7 +233,7 @@ class ModeBank {
   static constexpr int kMaxModes = 72;
   void prepare(double rate) { rate_ = rate; clear(); }
   void clear() {
-    count_ = 0; glide_ = 1.0; amplitude_ = 0.0; damp_ = 1.0; tick_ = 0;
+    count_ = 0; glide_ = 1.0; amplitude_ = 0.0; damp_ = 1.0; tick_ = 0; blurred_ = false; noise_ = kNoiseSeed;
     for (auto& m : modes_) m = Mode{};
   }
   void silence() { for (int i = 0; i < count_; ++i) { modes_[static_cast<size_t>(i)].re = modes_[static_cast<size_t>(i)].im = 0.0f; } amplitude_ = 0.0; }
@@ -246,6 +251,28 @@ class ModeBank {
       m.drive = static_cast<float>(specs[i].drive);
       m.out = static_cast<float>(specs[i].radiate);
       m.base_decay = m.decay;
+      if (specs[i].blur_hz > 0.0) {
+        // The wander: a random level held for 16 samples and smoothed by a one-pole of corner
+        // blur_hz, scaled to unit power so the mode is as loud as it was.
+        const double a = std::exp(-kTau * std::min(specs[i].blur_hz, 0.2 * rate_) / rate_);
+        double sum = 1.0, an = a;
+        for (int d = 1; d < 16; ++d) { sum += 2.0 * an * (1.0 - d / 16.0); an *= a; }
+        const double power = (1.0 - a) / (1.0 + a) * sum / 3.0;  // a uniform level in [-1, 1] has power 1/3
+        m.wander_k = static_cast<float>(1.0 - a);
+        m.wander_gain = static_cast<float>(1.0 / std::sqrt(std::max(power, 1e-9)));
+        blurred_ = true;
+      }
+    }
+    noise_ = kNoiseSeed; tick_ = 0;
+    if (blurred_) {
+      // Each wander starts somewhere within its own long-run spread (a uniform draw of the same
+      // power), so the stroke's first instant is neither thinned nor louder than what follows.
+      draw_wander();
+      for (int i = 0; i < count_; ++i) {
+        Mode& m = modes_[static_cast<size_t>(i)];
+        if (m.wander_k > 0.0f) m.wander = m.wander_to * 1.7320508f / m.wander_gain;
+      }
+      draw_wander();
     }
     retune(1.0);
   }
@@ -271,9 +298,26 @@ class ModeBank {
     retune(glide_);
   }
   float process(float force) {
-    if (++tick_ >= 16) { tick_ = 0; update_glide(); }
+    if (++tick_ >= 16) { tick_ = 0; update_glide(); if (blurred_) draw_wander(); }
     float out = 0.0f;
     double a = 0.0;
+    if (blurred_) {
+      for (int i = 0; i < count_; ++i) {
+        Mode& m = modes_[static_cast<size_t>(i)];
+        const float re = m.re * m.cr - m.im * m.ci + force * m.drive;
+        const float im = m.re * m.ci + m.im * m.cr;
+        m.re = re; m.im = im;
+        if (m.wander_k > 0.0f) {
+          m.wander += (m.wander_to - m.wander) * m.wander_k;
+          out += im * m.out * m.wander * m.wander_gain;
+        } else {
+          out += im * m.out;
+        }
+        if (i < 4) a += std::abs(re) + std::abs(im);
+      }
+      amplitude_ = a;
+      return out;
+    }
     for (int i = 0; i < count_; ++i) {
       Mode& m = modes_[static_cast<size_t>(i)];
       const float re = m.re * m.cr - m.im * m.ci + force * m.drive;
@@ -304,7 +348,18 @@ class ModeBank {
   struct Mode {
     float re = 0.0f, im = 0.0f, cr = 1.0f, ci = 0.0f, drive = 0.0f, out = 0.0f;
     double w = 0.0, decay = 0.0, base_decay = 0.0;
+    float wander = 0.0f, wander_to = 0.0f, wander_k = 0.0f, wander_gain = 1.0f;
   };
+  static constexpr uint32_t kNoiseSeed = 0x9e3779b9u;
+  // A new random level for every blurred mode (xorshift32: the same on every compiler).
+  void draw_wander() {
+    for (int i = 0; i < count_; ++i) {
+      Mode& m = modes_[static_cast<size_t>(i)];
+      if (m.wander_k <= 0.0f) continue;
+      noise_ ^= noise_ << 13; noise_ ^= noise_ >> 17; noise_ ^= noise_ << 5;
+      m.wander_to = static_cast<float>(static_cast<int32_t>(noise_)) * (1.0f / 2147483648.0f);
+    }
+  }
   void update_glide() {
     if (beta_ == 0.0) return;
     // The bank's amplitude in units of the hardest stroke (about 4 at 12 m/s).
@@ -323,6 +378,8 @@ class ModeBank {
   }
   std::array<Mode, kMaxModes> modes_{};
   int count_ = 0, tick_ = 0;
+  bool blurred_ = false;
+  uint32_t noise_ = kNoiseSeed;
   double rate_ = 48000.0, beta_ = 0.0, glide_ = 1.0, amplitude_ = 0.0, damp_ = 1.0;
 };
 

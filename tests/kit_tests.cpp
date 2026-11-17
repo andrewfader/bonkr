@@ -19,7 +19,7 @@ SCENARIO(every_kit_puts_its_drums_where_general_midi_puts_them) {
   const auto& maps = dsp::kits::all();
   const auto role = [](int s) { return dsp::kSoundNames[s]; };
   THEN("C1 (36) is a kick, D1 (38) a snare, F#1 (42) a closed hat and A#1 (46) an open one, in the acoustic and sampled sets");
-  for (int k : {dsp::kits::kStudioRock, dsp::kits::kFunk, dsp::kits::kBigRoom, dsp::kits::kGated80s, dsp::kits::kLinn, dsp::kits::kDmx, dsp::kits::kSp1200, dsp::kits::kMpc60, dsp::kits::kHr16}) {
+  for (int k : {dsp::kits::kStudioRock, dsp::kits::kFunk, dsp::kits::kBigRoom, dsp::kits::kGated80s, dsp::kits::kLinn, dsp::kits::kDmx, dsp::kits::kSp1200, dsp::kits::kMpc60, dsp::kits::kHr16, dsp::kits::kPsychRock}) {
     const auto& m = maps[static_cast<size_t>(k)];
     CHECK(std::string(role(m[36].sound)).find("Kick") == 0, std::string(dsp::kits::kKitNames[k]) + " kick");
     CHECK(std::string(role(m[38].sound)).find("Snare") == 0, std::string(dsp::kits::kKitNames[k]) + " snare");
@@ -30,6 +30,24 @@ SCENARIO(every_kit_puts_its_drums_where_general_midi_puts_them) {
   CHECK(maps[dsp::kits::kKit909][36].sound == dsp::kTR909Kick && maps[dsp::kits::kKit909][42].sound == dsp::kTR909HatClosed, "909");
   THEN("and every kit strikes something on the kick and snare keys");
   for (int k = 0; k < dsp::kits::kKitCount; ++k) CHECK(maps[static_cast<size_t>(k)][36].sound >= 0 && maps[static_cast<size_t>(k)][38].sound >= 0, dsp::kits::kKitNames[k]);
+}
+
+SCENARIO(the_psych_rock_kit_carries_its_cymbals_behind_the_drums) {
+  GIVEN("the studio rock kit and the psych rock kit, the same strokes on each");
+  const auto level = [](int kit, int key) {
+    auto e = rig::Engine::kit(kit);
+    const auto x = e.stroke(key, 0.8, 0.1, 0.5);
+    return measure::db(measure::rms(Span(x, 0, static_cast<size_t>(0.3 * kRate))));
+  };
+  const auto behind = [&](int kit, int key) { return level(kit, 36) - level(kit, key); };
+  THEN("its closed hat, open hat, crash and ride each sit 4 dB or more further under its kick than the studio kit's do");
+  for (int key : {42, 46, 49, 51}) {
+    const double more = behind(dsp::kits::kPsychRock, key) - behind(dsp::kits::kStudioRock, key);
+    CHECK(more > 4.0, spec::fmt("key %.0f: %.1f dB further back", key, more));
+  }
+  THEN("and its snare is still within 6 dB of where the studio kit's sits against the kick");
+  const double snare = behind(dsp::kits::kPsychRock, 38) - behind(dsp::kits::kStudioRock, 38);
+  CHECK(std::abs(snare) < 6.0, spec::fmt("%.1f dB", snare));
 }
 
 SCENARIO(chromatic_play_tunes_by_the_key) {

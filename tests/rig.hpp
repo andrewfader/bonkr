@@ -111,6 +111,25 @@ inline std::vector<double> peaks_hz(const measure::Span& s, double rate, int cou
   }
   return out;
 }
+// How bell-like a span is: the mean height, in dB, of its 20 strongest spectral bins between lo and
+// hi over the median of the spectrum within 300 Hz either side of each. A pure partial stands 40 dB
+// and more over its surroundings; a recorded cymbal's or hi-hat's strongest lines between 16 and 39.
+inline double line_prominence_db(const measure::Span& s, double rate, double lo = 1500.0, double hi = 12000.0, int order = 14) {
+  const auto p = measure::power_spectrum(s, order);
+  const double bin = rate / static_cast<double>(p.size() * 2);
+  const long half = static_cast<long>(300.0 / bin);
+  std::vector<double> prominence, window;
+  for (long k = static_cast<long>(lo / bin); k < static_cast<long>(hi / bin) && k + half < static_cast<long>(p.size()); ++k) {
+    window.assign(p.begin() + std::max(0L, k - half), p.begin() + k + half + 1);
+    std::nth_element(window.begin(), window.begin() + static_cast<long>(window.size() / 2), window.end());
+    prominence.push_back(10.0 * std::log10((p[static_cast<size_t>(k)] + 1e-30) / (window[window.size() / 2] + 1e-30)));
+  }
+  std::sort(prominence.begin(), prominence.end(), std::greater<double>());
+  double sum = 0.0;
+  const size_t n = std::min<size_t>(20, prominence.size());
+  for (size_t i = 0; i < n; ++i) sum += prominence[i];
+  return n ? sum / static_cast<double>(n) : 0.0;
+}
 // The strongest peak within [lo, hi].
 inline double strongest_hz(const measure::Span& s, double rate, double lo, double hi, int order = 16) {
   const auto p = peaks_hz(s, rate, 1, lo, hi, order);

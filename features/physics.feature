@@ -56,6 +56,11 @@ Feature: The physics every sound is built from
     Given the opera gong, struck hard
     Then its pitch climbs by more than a quarter-tone as the vibration dies (a softening nonlinearity)
 
+  # physics_tests :: cymbals_and_hats_hiss_rather_than_ring_like_bells
+  Scenario: cymbals and hats hiss rather than ring like bells
+    Given the kit's hi-hats and cymbals, each struck firmly, heard from 50 to 400 ms after the stroke
+    Then no partial stands further over the wash around it than the strongest lines of a recorded one do
+
   # physics_tests :: a_cymbal_is_dense_and_its_highs_bloom
   Scenario: a cymbal is dense and its highs bloom
     Given an 18 inch crash struck firmly
