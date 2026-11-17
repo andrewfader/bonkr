@@ -10,7 +10,7 @@ Feature: Kits, chromatic play, chokes, restrikes, swing and note repeat
   # kit_tests :: the_psych_rock_kit_carries_its_cymbals_behind_the_drums
   Scenario: the psych rock kit carries its cymbals behind the drums
     Given the studio rock kit and the psych rock kit, the same strokes on each
-    Then its closed hat, open hat, crash and ride each sit 4 dB or more further under its kick than the studio kit's do
+    Then its closed hat, open hat, crash and ride each sit a little further under its kick than the studio kit's do: 1 to 4 dB
     Then and its snare is still within 6 dB of where the studio kit's sits against the kick
 
   # kit_tests :: chromatic_play_tunes_by_the_key

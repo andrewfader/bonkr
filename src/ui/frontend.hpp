@@ -55,6 +55,7 @@ const char* gui_help(clap_id id) {
     case kMicPattern: return "The microphones' pattern: omni hears the room all round, cardioid less of it, figure-8 the front and back.";
     case kMicSetup: return "A stereo pair, or one microphone in mono.";
     case kPreset: return "Factory presets: a kit or a sound in a room, ready to play.";
+    case kCloseMics: return "How much of the sound comes from spot microphones on the drums rather than the pair in the room: the drums dry, at once and where they stand, with the room behind them.";
     default: return nullptr;
   }
 }

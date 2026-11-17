@@ -38,7 +38,7 @@ inline std::vector<PageSpec> bonkr_pages() {
         {"Stereo", 2, {knob(kStereoWidth), knob(kPan)}}}},
       {"ROOM", "The room the kit stands in, the air, and the microphones", theme::cyan, 3, 150,
        {{"Room", 0, {menu(kRoomSize, 2), knob(kRoomAbsorption), knob(kMicDistance)}},
-        {"Microphones", 1, {menu(kMicPattern, 2), segments(kMicSetup, 2)}},
+        {"Microphones", 1, {menu(kMicPattern, 2), segments(kMicSetup, 2), knob(kCloseMics)}},
         {"Air", 2, {knob(kHumidity), knob(kTemperature)}}}},
   };
 }
@@ -84,7 +84,7 @@ inline bool param_relevant(int id, const double* values) {
       return !chromatic || (sound >= dsp::kSnareMaple && sound <= dsp::kSnareBrushSweep);
     case kChoke: return !chromatic;
     case kRoomAbsorption: return values[kRoomSize] > 0.0;
-    case kMicPattern: case kMicSetup: return values[kRoomSize] > 0.0 || values[kMicDistance] > 0.0;
+    case kMicPattern: case kMicSetup: case kCloseMics: return values[kRoomSize] > 0.0 || values[kMicDistance] > 0.0;
     case kGateHold: return values[kGate] > 0.0;
     default: return true;
   }

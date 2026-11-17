@@ -40,10 +40,10 @@ SCENARIO(the_psych_rock_kit_carries_its_cymbals_behind_the_drums) {
     return measure::db(measure::rms(Span(x, 0, static_cast<size_t>(0.3 * kRate))));
   };
   const auto behind = [&](int kit, int key) { return level(kit, 36) - level(kit, key); };
-  THEN("its closed hat, open hat, crash and ride each sit 4 dB or more further under its kick than the studio kit's do");
+  THEN("its closed hat, open hat, crash and ride each sit a little further under its kick than the studio kit's do: 1 to 4 dB");
   for (int key : {42, 46, 49, 51}) {
     const double more = behind(dsp::kits::kPsychRock, key) - behind(dsp::kits::kStudioRock, key);
-    CHECK(more > 4.0, spec::fmt("key %.0f: %.1f dB further back", key, more));
+    CHECK(more > 1.0 && more < 4.0, spec::fmt("key %.0f: %.1f dB further back", key, more));
   }
   THEN("and its snare is still within 6 dB of where the studio kit's sits against the kick");
   const double snare = behind(dsp::kits::kPsychRock, 38) - behind(dsp::kits::kStudioRock, 38);

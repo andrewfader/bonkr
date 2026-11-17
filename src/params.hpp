@@ -39,6 +39,8 @@ enum ParamId : uint32_t {
   kRoomSize, kRoomAbsorption, kMicDistance, kHumidity, kTemperature, kMicPattern, kMicSetup, kStereoWidth, kPan,
   // --- presets -------------------------------------------------------------------------------------
   kPreset,
+  // --- added later; ids are append-only ------------------------------------------------------------
+  kCloseMics,
   kParamCount
 };
 
@@ -117,6 +119,8 @@ constexpr std::array<ParamSpec, kParamCount> kSpecs{{
     {"Pan", "Room/Stereo", -1, 1, 0, false, Unit::Plain, nullptr},
     // presets
     {"Preset", "Presets", 0, kPresetCount - 1, 0, true, Unit::Plain, nullptr},
+    // the spot microphones on the drums, against the pair in the room
+    {"Close mics", "Room", 0, 1, 0, false, Unit::Percent, nullptr},
 }};
 
 // The preset parameter's value names come from the preset table, which lives above this header

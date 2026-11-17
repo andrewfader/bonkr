@@ -76,6 +76,73 @@ SCENARIO(a_room_rings_for_its_sabine_time) {
   CHECK_NEAR(60.0 / slope, room.rt60_low(), 0.25 * room.rt60_low(), ::spec::fmt("T60 %.2f s against Sabine's %.2f", 60.0 / slope, room.rt60_low()));
 }
 
+SCENARIO(a_stereo_pair_hears_the_bass_as_one) {
+  GIVEN("a click in a 150 cubic-metre studio with walls of absorption 0.2, a stereo pair 2.5 m away");
+  air::Room room;
+  room.prepare(kRate);
+  air::Room::Settings s; s.volume_m3 = 150.0; s.absorption = 0.2; s.distance_m = 2.5;
+  room.configure(s);
+  const size_t n = static_cast<size_t>(kRate * 1.5);
+  std::vector<float> mid(n), side(n);
+  for (size_t i = 0; i < n; ++i) {
+    float l = i == 100 ? 1.0f : 0.0f, r = l;
+    room.process(l, r);
+    mid[i] = 0.5f * (l + r); side[i] = 0.5f * (l - r);
+  }
+  // Two one-pole low-passes at 100 Hz split each signal into its bass and the rest.
+  const auto split = [&](const std::vector<float>& x, double& low_db, double& high_db) {
+    const double a = std::exp(-kTau * 100.0 / kRate);
+    double s1 = 0.0, s2 = 0.0, low = 0.0, high = 0.0;
+    for (float v : x) {
+      s1 = (1.0 - a) * v + a * s1; s2 = (1.0 - a) * s1 + a * s2;
+      low += s2 * s2; high += (v - s2) * (v - s2);
+    }
+    low_db = 10.0 * std::log10(std::max(low, 1e-30)); high_db = 10.0 * std::log10(std::max(high, 1e-30));
+  };
+  double mid_low, mid_high, side_low, side_high;
+  split(mid, mid_low, mid_high); split(side, side_low, side_high);
+  THEN("under 100 Hz, where the wave is far longer than the pair is wide, the two microphones differ at least 12 dB less than they agree");
+  CHECK(mid_low - side_low >= 12.0, ::spec::fmt("bass: side %.1f dB under the middle", mid_low - side_low));
+  THEN("above it the room is still wide: the difference stays within 12 dB of the sum");
+  CHECK(mid_high - side_high <= 12.0, ::spec::fmt("the rest: side %.1f dB under the middle", mid_high - side_high));
+}
+
+namespace {
+// The studio rock kit's snare (key 38) in a 3000 cubic-metre hall, the pair 6 m away, with the
+// spot microphones at `close`; left and right summed.
+std::vector<float> snare_in_a_hall(double close) {
+  auto owned = std::make_unique<bonkr::Engine>();
+  bonkr::Engine& engine = *owned;
+  engine.prepare(kRate);
+  bonkr::Settings s = bonkr::Settings::defaults();
+  namespace P = bonkr::params;
+  s.v[P::kLayout] = P::kLayoutKit;
+  s.v[P::kRoomSize] = 5; s.v[P::kMicDistance] = 6.0; s.v[P::kRoomAbsorption] = 0.15;
+  s.v[P::kCloseMics] = close;
+  engine.note_on(s, 0, 38, -1, 0.9);
+  std::vector<float> left(static_cast<size_t>(kRate * 1.5)), right(left.size());
+  for (size_t at = 0; at < left.size(); at += 256) engine.render(s, left.data() + at, right.data() + at, static_cast<uint32_t>(std::min<size_t>(256, left.size() - at)));
+  for (size_t i = 0; i < left.size(); ++i) left[i] = 0.5f * (left[i] + right[i]);
+  return left;
+}
+double span_db(const std::vector<float>& x, double from_s, double to_s) {
+  double e = 0.0;
+  const size_t a = static_cast<size_t>(from_s * kRate), b = static_cast<size_t>(to_s * kRate);
+  for (size_t i = a; i < b; ++i) e += x[i] * x[i];
+  return 10.0 * std::log10(std::max(e / static_cast<double>(b - a), 1e-30));
+}
+}  // namespace
+
+SCENARIO(spot_microphones_put_the_drum_in_front_of_the_room) {
+  GIVEN("a snare stroke in a hall heard by a pair 6 m away, and the same with the spot microphones mixed in at 60%");
+  const auto pair = snare_in_a_hall(0.0), mixed = snare_in_a_hall(0.6);
+  THEN("with the spots the drum is heard at the stroke, before its sound has crossed to the pair");
+  CHECK(span_db(mixed, 0.0, 0.012) - span_db(pair, 0.0, 0.012) >= 30.0, ::spec::fmt("the first 12 ms: %.1f dB against %.1f", span_db(mixed, 0.0, 0.012), span_db(pair, 0.0, 0.012)));
+  THEN("the hall is still there, but lies further under the stroke than the pair alone has it");
+  const double under_pair = span_db(pair, 0.0, 0.06) - span_db(pair, 0.6, 1.0), under_mixed = span_db(mixed, 0.0, 0.06) - span_db(mixed, 0.6, 1.0);
+  CHECK(under_mixed - under_pair >= 2.5 && span_db(mixed, 0.6, 1.0) > -80.0, ::spec::fmt("the hall at 600 ms lies %.1f dB under the stroke (the pair alone: %.1f)", under_mixed, under_pair));
+}
+
 namespace {
 // A vuvuzela blown an octave up (B-flat 4, 466 Hz), heard by an omnidirectional microphone in the
 // open at `distance` metres, in air at 20 C and `humidity`; the left channel after it has settled.

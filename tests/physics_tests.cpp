@@ -117,11 +117,15 @@ SCENARIO(snare_wires_buzz_against_the_head) {
   WHEN("the wires are tightened");
   p.snares = 1.0; p.snare_tension = 1.0;
   const auto tight = rig::voice(dsp::kSnareMaple, p, 0.5);
-  p.snare_tension = 0.0;
+  p.snare_tension = 0.25;  // loose, but still lying on the head
   const auto loose = rig::voice(dsp::kSnareMaple, p, 0.5);
-  THEN("tight wires part from the head less: less buzz after 60 ms than loose ones");
-  const double buzz_tight = measure::rms(Span(tight, static_cast<size_t>(0.06 * kRate), static_cast<size_t>(0.1 * kRate)));
-  const double buzz_loose = measure::rms(Span(loose, static_cast<size_t>(0.06 * kRate), static_cast<size_t>(0.1 * kRate)));
+  THEN("tight wires part from the head less: less buzz above 3 kHz after 60 ms than loose ones");
+  // The buzz is the wires' band, above 3 kHz; under it the head and the shell are still sounding.
+  const auto buzz = [&](const std::vector<float>& x) {
+    const Span late(x, static_cast<size_t>(0.06 * kRate), static_cast<size_t>(0.1 * kRate));
+    return measure::rms(late) * std::sqrt(measure::band_fraction(late, kRate, 3000.0, 16000.0));
+  };
+  const double buzz_tight = buzz(tight), buzz_loose = buzz(loose);
   CHECK(buzz_loose > buzz_tight, spec::fmt("loose %.4f against tight %.4f", buzz_loose, buzz_tight));
 }
 

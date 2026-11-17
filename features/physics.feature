@@ -36,7 +36,7 @@ Feature: The physics every sound is built from
     Given the maple snare with its snares on and thrown off
     Then with the snares on, far more of the sound lies above 3 kHz after the stick has left
     When the wires are tightened
-    Then tight wires part from the head less: less buzz after 60 ms than loose ones
+    Then tight wires part from the head less: less buzz above 3 kHz after 60 ms than loose ones
 
   # physics_tests :: the_kettle_makes_the_timpani_nearly_harmonic
   Scenario: the kettle makes the timpani nearly harmonic

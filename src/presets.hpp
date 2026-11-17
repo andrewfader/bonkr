@@ -71,8 +71,9 @@ inline const std::vector<Preset>& all() {
       {"Castanet roll", {{kLayout, kLayoutChromatic}, {kSound, dsp::kCastanetRoll}, {kRoomSize, 4}, {kMicDistance, 1.5}, {kMasterDb, 5.6}}},
       {"Hand claps, group", {{kLayout, kLayoutChromatic}, {kSound, dsp::kGroupClap}, {kRoomSize, 4}, {kMicDistance, 2.0}, {kMasterDb, 2.0}}},
       {"808 cowbell", {{kLayout, kLayoutChromatic}, {kSound, dsp::kTR808Cowbell}, {kMasterDb, 9.8}}},
-      // a rock kit as it sits on tape: one room, squashed and a little driven, cymbals well back
-      {"Psych rock kit, taped", {{kLayout, kLayoutKit}, {kKit, dsp::kits::kPsychRock}, {kRoomSize, 3}, {kRoomAbsorption, 0.2}, {kMicDistance, 2.5}, {kCrush, 0.45}, {kDrive, 0.2}, {kMasterDb, -6.1}}},
+      // a rock kit as it sits on tape: spot microphones on the drums in front of a pair in a
+      // studio room, lightly squashed
+      {"Psych rock kit, taped", {{kLayout, kLayoutKit}, {kKit, dsp::kits::kPsychRock}, {kRoomSize, 3}, {kRoomAbsorption, 0.3}, {kMicDistance, 2.0}, {kCloseMics, 0.85}, {kCrush, 0.2}, {kMasterDb, -0.4}}},
   };
   return table;
 }

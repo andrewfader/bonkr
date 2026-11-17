@@ -64,6 +64,12 @@ fraction of its frequency wide (`Plate::blur`: 0.008 for hats, 0.002 for crashes
 for a splash). The lowest modes stay pure, as they do in the recordings. `physics_tests` holds
 each cymbal to the most bell-like of its recordings.
 
+**Fitted to recordings** (references/): the kick's shell air is heard well under its heads
+(a recorded kick carries some 18 dB less in its 500 Hz octave than at 60 Hz; more and the drum
+sounds like a box); the snare's body between 400 Hz and 1 kHz is as strong as its 2 kHz, its
+wires ring for some 75 ms and their top is gone by 10 kHz; a floor tom is struck further from the
+middle than a rack tom, which brings up the modes an octave or two over its fundamental.
+
 **Damping** (a hand, a felt, a pillow, the hi-hat's pedal) shortens every mode, the high ones most.
 
 ## What is not a single body (src/dsp/sources.hpp)
@@ -124,7 +130,13 @@ each cymbal to the most bell-like of its recordings.
   room it is the gated drums of the early 1980s.
 - **The room and the air**: ISO 9613-1 absorption, the speed of sound, image-source early
   reflections and a Sabine-timed feedback-delay tail, heard by an omni, cardioid or figure-8 pair
-  (the room model is shared with HONKR and documented in src/dsp/air.hpp).
+  (the room model is shared with HONKR and documented in src/dsp/air.hpp). The pair's two
+  microphones stand 0.4 m apart, so a wave much longer than that reaches both alike: what the two
+  channels differ by is rolled off below about 210 Hz (c / 4d), and a kick in a room keeps its
+  bass in the middle.
+- **Close mics**: spot microphones on the drums, mixed at equal power against the pair. The spots
+  hear each drum dry, at the stroke and where it stands in the stereo picture; the pair hears the
+  kit a flight time later with the room round it. The gate works on the pair alone.
 
 ## Not modelled
 

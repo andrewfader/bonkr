@@ -1,11 +1,11 @@
 # BONKR's score against the reference recordings (tests/reference_match.hpp), by sound; reference_tests
 # fails if any gets worse. Written by bonkr-reference match --update-baseline.
-KickStudio	2.198
-SnareMaple	2.455
-SnareRimshot	2.469
-SnareCrossStick	4.647
+KickStudio	2.314
+SnareMaple	2.230
+SnareRimshot	2.401
+SnareCrossStick	3.362
 TomHigh	3.119
-TomFloor	3.127
+TomFloor	2.214
 HatClosed	2.315
 HatPedal	2.012
 HatOpen	1.545

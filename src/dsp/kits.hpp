@@ -240,12 +240,13 @@ inline Map make(int kit) {
       // Balanced as the drums sit on late-60s-style rock records (drum stems separated from Super
       // Furry Animals, Black Angels and Allah-Las albums): most of the energy in the kick and the
       // drums' shells from 60 to 250 Hz, the snare a little under the kick, and the hats and cymbals
-      // some 6 dB further back than a close-miked studio kit carries them.
-      s.kick = kKickVintage; s.kick2 = kKickDeep; s.snare = kSnareFat; s.snare2 = kSnareMaple; s.crash = kCrash18; s.tom_tune = -1.0f;
+      // a little further back than a close-miked studio kit carries them. The kick is the damped
+      // one: an open kick's half-second of ring fills the gaps between the strokes of a rock beat.
+      s.kick = kKickStudio; s.kick2 = kKickVintage; s.snare = kSnareFat; s.snare2 = kSnareMaple; s.crash = kCrash18; s.tom_tune = -1.0f;
       drum_set(m, s);
       for (int key : {37, 38, 40}) m[static_cast<size_t>(key)].level -= 1.5f;
       for (int key : {41, 43, 45, 47, 48, 50}) m[static_cast<size_t>(key)].level -= 2.0f;
-      for (int key : {42, 44, 46, 49, 51, 52, 53, 55, 57, 59}) m[static_cast<size_t>(key)].level -= 6.0f;
+      for (int key : {42, 44, 46, 49, 51, 52, 53, 55, 57, 59}) m[static_cast<size_t>(key)].level -= 2.0f;
       break;
     default: break;
   }

@@ -226,6 +226,12 @@ class Engine {
     const float pan = static_cast<float>(s[params::kPan]);
     const float drive = static_cast<float>(s[params::kDrive]);
     const float drive_gain = 1.0f + 15.0f * drive * drive;
+    // The spot microphones on the drums against the pair out in the room, at equal power: the
+    // spots hear each drum where it stands, dry and at once; the pair hears the kit a moment
+    // later with the room round it. The gate works on the room microphones alone.
+    const float close = room_.active() ? static_cast<float>(std::clamp(s[params::kCloseMics], 0.0, 1.0)) : 0.0f;
+    const float close_gain = std::sin(close * 0.5f * static_cast<float>(dsp::kPi));
+    const float pair_gain = std::cos(close * 0.5f * static_cast<float>(dsp::kPi));
     for (uint32_t i = 0; i < frames; ++i) {
       if (pending_count_ > 0) run_pending(s);
       run_repeats(s);
@@ -245,8 +251,10 @@ class Engine {
       converter_.process(l, r);
       const float key = 0.5f * (l + r);
       compressor_.process(l, r);
+      const float spot_l = l, spot_r = r;
       room_.process(l, r);
       gate_.process(key, l, r);
+      if (close > 0.0f) { l = pair_gain * l + close_gain * spot_l; r = pair_gain * r + close_gain * spot_r; }
       const float gain = static_cast<float>(master_.next());
       l *= gain; r *= gain;
       if (!std::isfinite(l)) l = 0.0f;

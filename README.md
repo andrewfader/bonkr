@@ -34,7 +34,7 @@ cymbals and Latin percussion above), so any GM drum part plays any of them: stud
 brushes, funk, a big room, gated 80s, orchestral, Latin, taiko, world hand drums, the TR-808,
 TR-909 and CR-78, the LinnDrum, Oberheim DMX, E-mu SP-1200, Akai MPC60 and Alesis HR-16 (acoustic
 models through each machine's converter), a junkyard, foley and machines, artillery and
-fireworks, and a psych rock kit balanced to drum stems of rock records (cymbals well behind the drums). Or play **one sound across the keyboard**, C4 at its own pitch.
+fireworks, and a psych rock kit balanced to drum stems of rock records (spot microphones in front of a studio room). Or play **one sound across the keyboard**, C4 at its own pitch.
 
 **The player**: the striker (the one native to each sound, or a stick, felt mallet, hand, brush, rods or hard
 mallet) meeting the surface by Hertzian contact, its hardness, where it lands, how velocity
@@ -43,7 +43,7 @@ reaches the stroke's speed; a drum struck again while it rings is the same drum 
 the resonant head. **The machine**: the converters (LinnDrum and DMX 8-bit companded, SP-1200 and
 MPC60 12-bit, HR-16 16-bit), MPC swing and note repeat from the host's tempo, drive, the hi-hat
 choke. **The studio**: the listen-mic compressor and a gate on the room, for the gated drums of
-the early 1980s. **The room and its air**, as in HONKR (room size, absorption, microphone distance, pattern and setup, humidity, temperature); the same air is what the blasts, the thunder and the passing jet cross outdoors, so a distant cannon is duller on a dry day. Chokes from the host (CLAP note choke) or
+the early 1980s. **The room and its air**, as in HONKR (room size, absorption, microphone distance, pattern and setup, close mics on the drums against the pair in the room, humidity, temperature); the same air is what the blasts, the thunder and the passing jet cross outdoors, so a distant cannon is duller on a dry day. Chokes from the host (CLAP note choke) or
 an electronic kit's cymbal grab (polyphonic pressure).
 
 **48 presets**, among them "In the Air Tonight toms", "Gated snare, 1985", "Stairwell drums

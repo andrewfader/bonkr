@@ -137,6 +137,7 @@ class Room {
   static constexpr int kMaxTaps = 25;       // the images up to second order, the direct path among them
   static constexpr double kMaxPathS = 0.6;  // longest second-order path in the largest room
   static constexpr double kMaxLineS = 0.3;
+  static constexpr double kPairWidthM = 0.4;  // between the stereo pair's two microphones
 
   void prepare(double rate) {
     rate_ = rate;
@@ -155,6 +156,7 @@ class Room {
     proximity_state_.fill(0.0f);
     tap_lp_.fill(0.0f);
     line_lp_.fill(0.0f);
+    pair_lp_.fill(0.0f);
   }
 
   bool active() const { return active_; }
@@ -187,6 +189,9 @@ class Room {
     proximity_leak_ = static_cast<float>(std::exp(-kTau * 35.0 / rate_));
     taps_ = 0;
     late_gain_ = 0.0f;
+    // The pair, 0.4 m wide: its channels agree below about c / 4d and part company above.
+    pair_pole_ = static_cast<float>(std::exp(-kTau * (c / (4.0 * kPairWidthM)) / rate_));
+    pair_direct_ = static_cast<float>(std::clamp(s.distance_m, 0.0, 1.0));
     if (s.volume_m3 <= 0.0) return;
     // The room: Bolt's proportions, the source a quarter of the way along its length at a player's
     // height and a little off the middle, the microphone `distance` away down the length of the
@@ -283,6 +288,7 @@ class Room {
       out_l += proximity_ * proximity_state_[0];
       out_r += proximity_ * proximity_state_[1];
     }
+    const float direct_l = out_l, direct_r = out_r;
     if (taps_ > 0) {
       for (int i = 0; i < taps_; ++i) {
         const Tap& t = tap_[static_cast<size_t>(i)];
@@ -311,6 +317,15 @@ class Room {
       out_r += late_gain_ * tail_r;
     }
     if (settings_.mono) { const float m = 0.5f * (out_l + out_r); out_l = out_r = m; }
+    else {
+      // A pair's two microphones stand a few hand-widths apart: a wave much longer than that
+      // reaches both alike, so what they differ by has no bass in it. The reflections and the
+      // tail always arrive at the pair; the direct sound does once the pair stands off the kit.
+      const float side = 0.5f * ((out_l - out_r) - (1.0f - pair_direct_) * (direct_l - direct_r));
+      pair_lp_[0] = (1.0f - pair_pole_) * side + pair_pole_ * pair_lp_[0];
+      pair_lp_[1] = (1.0f - pair_pole_) * pair_lp_[0] + pair_pole_ * pair_lp_[1];
+      out_l -= pair_lp_[1]; out_r += pair_lp_[1];
+    }
     l = out_l; r = out_r;
   }
 
@@ -332,6 +347,8 @@ class Room {
   double direct_delay_ = 0.0, late_start_ = 0.0, rt60_low_ = 0.0, rt60_high_ = 0.0, reach_ = 0.0;
   float direct_pole_ = 0.0f, late_gain_ = 0.0f, proximity_ = 0.0f, proximity_leak_ = 0.0f;
   std::array<float, 2> proximity_state_{};
+  float pair_pole_ = 0.0f, pair_direct_ = 0.0f;
+  std::array<float, 2> pair_lp_{};
   int taps_ = 0;
   std::array<DelayLine, 2> direct_;
   DelayLine paths_;

@@ -529,11 +529,13 @@ class Voice {
           const double t[] = {0.0977908, 0.0977908 * 0.8, 0.0977908 * 0.7, 0.0977908 * 0.6, 0.0977908 * 0.5};
           const double g[] = {1.0, 0.8, 0.6, 0.5, 0.4};
           table(1, f0, r, t, g, 5, p);
-          couple_ = true; couple_gain_ = 1.0f; bank_out_[1] = static_cast<float>(2.1);
+          // Heard through the resonant head and a ported, damped shell: well under the heads, or the
+          // drum sounds like a box (recorded kicks carry some 18 dB less at 500 Hz than at 60).
+          couple_ = true; couple_gain_ = 1.0f; bank_out_[1] = 1.25f;
         }
         // The beater on the head: the head's high modes beyond the bank, heard as the click.
         noise(0, Shape::Band, sound_ == kKickJazz ? 2200.0 : 5207.05, 0.5, 0.2, 23.922, 0.0, Drive::Force, 4.53);
-        noise(1, Shape::Band, 150.0, 0.7, 0.2, 62.8625, 0.0, Drive::Force, 10.9916);
+        noise(1, Shape::Band, 150.0, 0.7, 0.2, 62.8625, 0.0, Drive::Force, 13.0);
         tone(25.0, 4641.0);
         break;
       }
@@ -555,12 +557,14 @@ class Voice {
           membrane(0, m, p, cav.data(), static_cast<int>(cav.size()));
         }
         wires_on_ = true;
-        wires_.configure(p.snare_tension, p.snares * (sound_ == kSnareCrossStick ? 0.12 : 1.0), (sound_ == kSnareFat ? 70.0 : 45.0) * p.decay);
+        wires_.configure(p.snare_tension, p.snares * (sound_ == kSnareCrossStick ? 0.12 : 1.0), (sound_ == kSnareFat ? 105.0 : sound_ == kSnareRimshot ? 45.0 : 76.0) * p.decay);
         wire_scale_ = 1.15858;
         // The stick on the head, and the dense modes of the head and shell above the bank.
         noise(0, Shape::Band, 2007.8, 0.6, 0.1, 12.0, 0.0, Drive::Force, 1.02216);
-        noise(2, Shape::Band, 804.623, 0.6, 0.3, 52.0014, 0.0, Drive::Force, 14.0);
-        tone(20.0, 0.0);
+        // The body between the fundamental and the wires, from 400 Hz to 1 kHz, is as strong in a
+        // recorded snare as its 2 kHz; the wires' own top is gone by 10 kHz.
+        noise(2, Shape::Band, 650.0, 0.4, 0.3, sound_ == kSnareRimshot ? 52.0 : 80.0, 0.0, Drive::Force, 18.0);
+        tone(20.0, 10000.0);
         if (sound_ == kSnareRimshot || sound_ == kSnareCrossStick) {
           // The stick across the hoop: the shell and the rim ring, sharp and woody.
           static constexpr double kR[] = {1.0, 1.47, 2.09, 2.56, 3.39, 4.1};
@@ -588,6 +592,10 @@ class Voice {
         if (sound_ == kTomMid) { m.diameter = 0.305; m.tension = 1130.0; m.t60 = 1.2; }
         if (sound_ == kTomFloor) { m.diameter = 0.356; m.tension = 965.0; m.t60 = 1.5; }
         if (sound_ == kTomFloorLow) { m.diameter = 0.406; m.tension = 935.0; m.t60 = 1.8; }
+        // A floor tom is played further out from the middle than a rack tom: the stroke reaches
+        // the modes above the fundamental (the 250 Hz octave of a recorded floor tom lies only
+        // 6 to 9 dB under its fundamental's).
+        if (sound_ == kTomFloor || sound_ == kTomFloorLow) m.position = 0.62;
         membrane(0, m, p);
         noise(0, Shape::Band, 1800.0, 0.5, 0.1, 30.0, 0.0, Drive::Force, 6.0);
         break;

@@ -452,6 +452,16 @@ std::array<Proof, P::kParamCount> proofs() {
     const double cb = measure::correlation(Span(b.left, at(0.3), at(0.6)), Span(b.right, at(0.3), at(0.6)));
     return verdict(ca <= 0.95 && cb >= 0.999, "L/R correlation %.3f (stereo pair) -> %.3f (mono) (expected under 0.95, then 1)", ca, cb);
   });
+  // The snare in a hall, the pair 6 m off (17 ms of flight): with the spot microphones alone the
+  // drum is heard at the stroke, and the hall half a second later is gone.
+  {
+    Context c = kit(D::kits::kStudioRock, {{kRoomSize, 5}, {kMicDistance, 6.0}, {kRoomAbsorption, 0.1}}); c.velocity = 0.9; c.hold_s = 0.1; c.tail_s = 1.2;
+    set(kCloseMics, c, 0.0, 1.0, [](const Render& a, const Render& b) {
+      const double early = level_db(window(b, 0.0, 0.012)) - level_db(window(a, 0.0, 0.012));
+      const double late = level_db(window(b, 0.6, 1.0)) - level_db(window(a, 0.6, 1.0));
+      return verdict(early >= 30.0 && late <= -20.0, "the first 12 ms moved %+.1f dB and the hall at 600 ms %+.1f dB (expected at least 30 up and 20 down)", early, late);
+    });
+  }
   // "Studio rock kit" to "Timpani": key 60 becomes the timpani tuned two semitones down (130.8 Hz).
   {
     double timpani = 0.0;
