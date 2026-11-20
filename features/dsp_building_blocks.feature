@@ -39,3 +39,12 @@ Feature: The DSP building blocks
     Given the compressor at full crush, fed a -6 dBFS tone then a -40 dBFS one
     Then 34 dB of input difference comes out as less than 8 dB (above a -40 dBFS threshold at 20 : 1)
 
+  # dsp_tests :: the_tape_loses_its_top_to_the_gap_between_tape_and_head
+  Scenario: the tape loses its top to the gap between tape and head
+    Given a cassette at 4.76 cm/s played back with 1 um between the tape and the head, then the same at 9.5 cm/s
+    Then a wave loses 54.6 dB per wavelength of spacing (Wallace): 1.1 dB at 1 kHz, 5.7 at 5 kHz and 11.5 at 10 kHz on the cassette, half that at twice the speed, and nothing in the bass
+    Given the head on the tape, no spacing
+    Then the tape passes everything untouched
+    Given a tape that played a loud tone, was switched out, and is switched back in over silence
+    Then nothing of the old tone comes back
+

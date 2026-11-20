@@ -22,14 +22,15 @@ using Map = std::array<Slot, 128>;
 // The converter each kit was heard through (see machine.hpp; 0 is none).
 enum Converter : int { kConvKit, kConvClean, kConvLinn, kConvDmx, kConvSp1200, kConvMpc60, kConvHr16, kConverterCount };
 
-constexpr int kKitCount = 21;
+constexpr int kKitCount = 23;
 constexpr const char* kKitNames[kKitCount] = {
     "Studio rock", "Jazz brushes", "Funk, dry", "Big room", "Gated 80s", "Orchestral", "Latin", "Taiko",
     "World hand drums", "TR-808", "TR-909", "CR-78", "LinnDrum", "Oberheim DMX", "E-mu SP-1200", "Akai MPC60",
-    "Alesis HR-16", "Junkyard", "Foley and machines", "Artillery and fireworks", "Psych rock"};
+    "Alesis HR-16", "Junkyard", "Foley and machines", "Artillery and fireworks", "Psych rock", "Four-track basement",
+    "Home-studio psych"};
 enum Kit : int {
   kStudioRock, kJazz, kFunk, kBigRoom, kGated80s, kOrchestral, kLatin, kTaiko, kWorld, kKit808, kKit909, kKitCr78,
-  kLinn, kDmx, kSp1200, kMpc60, kHr16, kJunkyard, kFoley, kArtillery, kPsychRock
+  kLinn, kDmx, kSp1200, kMpc60, kHr16, kJunkyard, kFoley, kArtillery, kPsychRock, kFourTrack, kHomePsych
 };
 // Each kit's own converter.
 constexpr std::array<int, kKitCount> kKitConverter{
@@ -247,6 +248,18 @@ inline Map make(int kit) {
       for (int key : {37, 38, 40}) m[static_cast<size_t>(key)].level -= 1.5f;
       for (int key : {41, 43, 45, 47, 48, 50}) m[static_cast<size_t>(key)].level -= 2.0f;
       for (int key : {42, 44, 46, 49, 51, 52, 53, 55, 57, 59}) m[static_cast<size_t>(key)].level -= 2.0f;
+      break;
+    case kFourTrack:
+      s.kick = kKickVintage; s.kick2 = kKickStudio; s.snare = kSnareFat; s.snare2 = kSnareMaple; s.crash = kCrash18; s.tom_tune = -1.0f;
+      drum_set(m, s);
+      for (int key : {37, 38, 40}) m[static_cast<size_t>(key)].level -= 1.5f;
+      for (int key : {42, 44, 46, 49, 51, 52, 53, 55, 57, 59}) m[static_cast<size_t>(key)].level -= 6.0f;
+      break;
+    case kHomePsych:
+      s.kick = kKickVintage; s.kick2 = kKickStudio; s.snare = kSnareFat; s.snare2 = kSnareMaple; s.crash = kCrash18; s.tom_tune = -2.0f;
+      drum_set(m, s);
+      for (int key : {37, 38, 40}) m[static_cast<size_t>(key)].level -= 1.5f;
+      for (int key : {42, 44, 46, 49, 51, 52, 53, 55, 57, 59}) m[static_cast<size_t>(key)].level -= 4.0f;
       break;
     default: break;
   }

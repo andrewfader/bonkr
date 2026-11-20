@@ -41,11 +41,12 @@ enum ParamId : uint32_t {
   kPreset,
   // --- added later; ids are append-only ------------------------------------------------------------
   kCloseMics,
+  kTapeSpeed, kHeadSpacing,
   kParamCount
 };
 
 // How a value is shown to the musician. Stepped parameters with names draw from an option table.
-enum class Unit : uint8_t { Plain, Ms, Seconds, Percent, Db, Hz, Semitones, Cents, Count, Options, Metres, Celsius, Ratio };
+enum class Unit : uint8_t { Plain, Ms, Seconds, Percent, Db, Hz, Semitones, Cents, Count, Options, Metres, Celsius, Ratio, Micrometres };
 
 struct ParamSpec {
   const char* name;
@@ -76,7 +77,11 @@ constexpr const char* kRoomSizeNames[kRoomSizeCount] = {"Off", "Booth", "Bedroom
 constexpr std::array<double, kRoomSizeCount> kRoomVolumes{0.0, 10.0, 35.0, 150.0, 600.0, 3000.0, 12000.0};
 constexpr const char* kMicPatternNames[] = {"Omni", "Cardioid", "Figure-8"};
 constexpr const char* kMicSetupNames[] = {"Stereo pair", "Mono"};
-constexpr int kPresetCount = 48;  // The names live in presets.hpp; the table only needs the size.
+// The tape the drums were recorded to (src/dsp/machine.hpp): its speed, in metres per second.
+constexpr int kTapeSpeedCount = 3;
+constexpr const char* kTapeSpeedNames[kTapeSpeedCount] = {"Cassette, 4.76 cm/s", "Four-track cassette, 9.5 cm/s", "Reel, 19 cm/s"};
+constexpr std::array<double, kTapeSpeedCount> kTapeSpeeds{0.0476, 0.0953, 0.19};
+constexpr int kPresetCount = 50;  // The names live in presets.hpp; the table only needs the size.
 
 constexpr std::array<ParamSpec, kParamCount> kSpecs{{
     // the kit
@@ -121,6 +126,9 @@ constexpr std::array<ParamSpec, kParamCount> kSpecs{{
     {"Preset", "Presets", 0, kPresetCount - 1, 0, true, Unit::Plain, nullptr},
     // the spot microphones on the drums, against the pair in the room
     {"Close mics", "Room", 0, 1, 0, false, Unit::Percent, nullptr},
+    // the tape: its speed, and the gap between it and the playback head (0: the head on the tape)
+    {"Tape speed", "Machine", 0, kTapeSpeedCount - 1, 0, true, Unit::Options, kTapeSpeedNames},
+    {"Head spacing", "Machine", 0, 5, 0, false, Unit::Micrometres, nullptr},
 }};
 
 // The preset parameter's value names come from the preset table, which lives above this header
@@ -168,6 +176,7 @@ inline bool format_value(uint32_t id, double value, char* out, uint32_t capacity
     case Unit::Metres: std::snprintf(out, capacity, value < 1.0 ? "%.2f m" : "%.1f m", value); break;
     case Unit::Celsius: std::snprintf(out, capacity, "%.0f C", value); break;
     case Unit::Ratio: std::snprintf(out, capacity, "x%.2f", value); break;
+    case Unit::Micrometres: std::snprintf(out, capacity, "%.2f um", value); break;
 
     case Unit::Plain:
       if (s.stepped && s.min == 0 && s.max == 1) std::snprintf(out, capacity, value >= 0.5 ? "On" : "Off");

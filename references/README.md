@@ -50,3 +50,19 @@ To change the recordings: edit the rules in `tools/references/choose.py`, then
 `fetch.py` without `--pin` verifies the downloads against the pins. Three Iowa and Philharmonia
 woodblock files could not be decoded, so the woodblock has no reference yet; nor do the sounds no
 free recording was found for (see `SOURCES.md`).
+
+## Drum stems of records
+
+Two kits are fitted to the drums of whole records rather than to single instruments: "Four-track
+basement kit" to 14 lo-fi basement four-track records and "Home-studio psych kit" to 12
+home-studio psych records (htdemucs_6s drum stems of 45 s excerpts of the user's own records,
+measured by the song corpus's `scripts/features.py`). `tools/stem_reference.py` turns that
+corpus's `features_ref.json` into `tests/stem_reference.hpp`: per group, the quartiles of the
+drum stems' roll-off, share below 250 Hz, centroid, crest and L/R correlation. Numbers only; no
+audio leaves the corpus. `stem_gate_tests` plays a 30 s rock groove at 128 BPM
+(`tests/stem_groove.hpp`) through each preset, measures it as the corpus measures a drum stem
+(`tests/stem_features.hpp`, the same numbers as `features.py`), and holds every feature inside the
+records' interquartile range.
+
+    python3 -I tools/stem_reference.py /path/to/song-corpus/features_ref.json > tests/stem_reference.hpp
+    build-release/bonkr-groove-render build-release/BONKR.clap out.wav "preset=Four-track basement kit"

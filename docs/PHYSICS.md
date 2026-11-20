@@ -137,6 +137,15 @@ middle than a rack tom, which brings up the modes an octave or two over its fund
 - **Close mics**: spot microphones on the drums, mixed at equal power against the pair. The spots
   hear each drum dry, at the stroke and where it stands in the stereo picture; the pair hears the
   kit a flight time later with the room round it. The gate works on the pair alone.
+- **The tape**: what the microphones heard, recorded and played back through a head that has lost
+  touch with the tape. A recorded wave of wavelength v / f reaches a head d away as
+  exp(-2 pi d f / v), 54.6 dB per wavelength of spacing (Wallace's spacing loss): 1 um on a
+  cassette at 4.76 cm/s costs 11.5 dB at 10 kHz, at 19 cm/s a quarter of that. Shed oxide, worn
+  heads, a tired pressure pad and each bounce to another track add to the gap. Along the tape the
+  loss is the Poisson kernel d / (pi (d^2 + x^2)), applied band-limited to the sample rate over a
+  millisecond either side, so the stage delays by that millisecond while there is a gap. A head on
+  the tape (spacing 0) is flat: the machine's equalisation does what it was set up to do. Tape
+  saturation, hiss, wow and flutter and the head bump are not modelled.
 
 ## Not modelled
 

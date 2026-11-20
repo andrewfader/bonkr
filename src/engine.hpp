@@ -1,6 +1,6 @@
 // The instrument: a kit of physically modelled drums (or one sound across the keyboard), struck
 // by the notes, through a drum machine's converter, the studio's compressor and gate, the room
-// and the air, the master level and an output limiter. The engine knows nothing about CLAP: it
+// and the air, the tape, the master level and an output limiter. The engine knows nothing about CLAP: it
 // takes a snapshot of parameter values per block and note events between render calls, and it
 // never allocates while rendering.
 #pragma once
@@ -125,13 +125,14 @@ class Engine {
     converter_.prepare(rate);
     compressor_.prepare(rate);
     gate_.prepare(rate);
+    tape_.prepare(rate);
     master_.set_time(10.0, rate);
     master_.snap(dsp::db_to_gain(params::kSpecs[params::kMasterDb].def));
     reset();
   }
   void reset() {
     for (auto& v : voices_) v.kill();
-    room_.reset(); limiter_.reset(); converter_.reset(); compressor_.reset(); gate_.reset();
+    room_.reset(); limiter_.reset(); converter_.reset(); compressor_.reset(); gate_.reset(); tape_.reset();
     pending_count_ = 0; held_.fill(false); repeat_left_.fill(-1.0); key_delay_.fill(0.0);
     peak_l_ = peak_r_ = 0.0f; clipped_ = false; frame_ = 0;
     // Each hit's variation is drawn from its count since the reset, so a host that resets before
@@ -255,6 +256,7 @@ class Engine {
       room_.process(l, r);
       gate_.process(key, l, r);
       if (close > 0.0f) { l = pair_gain * l + close_gain * spot_l; r = pair_gain * r + close_gain * spot_r; }
+      tape_.process(l, r);
       const float gain = static_cast<float>(master_.next());
       l *= gain; r *= gain;
       if (!std::isfinite(l)) l = 0.0f;
@@ -289,6 +291,7 @@ class Engine {
     compressor_.set(s[params::kCrush]);
     gate_.set(s[params::kGate], s[params::kGateHold]);
     room_.configure(room_settings(s));
+    tape_.set(params::kTapeSpeeds[static_cast<size_t>(std::clamp(s.option(params::kTapeSpeed), 0, params::kTapeSpeedCount - 1))], s[params::kHeadSpacing] * 1e-6);
   }
   static dsp::air::Room::Settings room_settings(const Settings& s) {
     dsp::air::Room::Settings r;
@@ -420,6 +423,7 @@ class Engine {
   dsp::machine::Converter converter_;
   dsp::machine::Compressor compressor_;
   dsp::machine::Gate gate_;
+  dsp::machine::Tape tape_;
   dsp::air::Room room_;
   Limiter limiter_;
   dsp::Smoother master_;

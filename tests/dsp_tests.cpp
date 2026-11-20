@@ -142,4 +142,36 @@ SCENARIO(the_listen_mic_compressor_squashes_hard_and_fast) {
   CHECK(loud - quiet < 8.0, spec::fmt("%.1f dB apart", loud - quiet));
 }
 
+SCENARIO(the_tape_loses_its_top_to_the_gap_between_tape_and_head) {
+  GIVEN("a cassette at 4.76 cm/s played back with 1 um between the tape and the head, then the same at 9.5 cm/s");
+  const auto loss_db = [](double speed, double spacing, double hz) {
+    bonkr::dsp::machine::Tape tape;
+    tape.prepare(48000.0);
+    tape.set(speed, spacing);
+    std::vector<float> y(24000);
+    for (size_t i = 0; i < y.size(); ++i) { float l = static_cast<float>(0.25 * std::sin(kTau * hz * static_cast<double>(i) / 48000.0)), r = l; tape.process(l, r); y[i] = l; }
+    return -measure::db(measure::tone_amplitude(measure::Span(y, 8000, 16000), 48000.0, hz) / 0.25);
+  };
+  THEN("a wave loses 54.6 dB per wavelength of spacing (Wallace): 1.1 dB at 1 kHz, 5.7 at 5 kHz and 11.5 at 10 kHz on the cassette, half that at twice the speed, and nothing in the bass");
+  for (double hz : {1000.0, 5000.0, 10000.0}) {
+    CHECK_NEAR(loss_db(0.0476, 1e-6, hz), 54.6 * 1e-6 * hz / 0.0476, 0.5, spec::fmt("loss at %.0f Hz, 4.76 cm/s, dB", hz));
+    CHECK_NEAR(loss_db(0.0953, 1e-6, hz), 54.6 * 1e-6 * hz / 0.0953, 0.5, spec::fmt("loss at %.0f Hz, 9.5 cm/s, dB", hz));
+  }
+  CHECK_NEAR(loss_db(0.0476, 1e-6, 80.0), 0.0, 0.2, "loss at 80 Hz, dB");
+  GIVEN("the head on the tape, no spacing");
+  THEN("the tape passes everything untouched");
+  CHECK_NEAR(loss_db(0.0476, 0.0, 10000.0), 0.0, 0.01, "loss at 10 kHz, dB");
+  GIVEN("a tape that played a loud tone, was switched out, and is switched back in over silence");
+  bonkr::dsp::machine::Tape tape;
+  tape.prepare(48000.0);
+  tape.set(0.0476, 1e-6);
+  for (int i = 0; i < 4800; ++i) { float l = 0.5f, r = 0.5f; tape.process(l, r); }
+  tape.set(0.0476, 0.0);
+  tape.set(0.0476, 1e-6);
+  double loudest = 0.0;
+  for (int i = 0; i < 4800; ++i) { float l = 0.0f, r = 0.0f; tape.process(l, r); loudest = std::max(loudest, static_cast<double>(std::abs(l))); }
+  THEN("nothing of the old tone comes back");
+  CHECK(loudest == 0.0, spec::fmt("loudest sample %.3g", loudest));
+}
+
 int main(int argc, char** argv) { return spec::run(argc, argv); }

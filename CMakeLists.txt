@@ -111,6 +111,8 @@ bonkr_test(engine_tests)
 # quality gate in references/gate.tsv and may not score worse than references/baseline.tsv.
 bonkr_test(reference_tests)
 set_tests_properties(reference_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+# The kits fitted to records against the drum stems of those records (tests/stem_reference.hpp).
+bonkr_test(stem_gate_tests)
 
 # Suites that load the built .clap and drive it through the public CLAP interfaces, as a host does.
 function(bonkr_plugin_test name)
@@ -156,6 +158,15 @@ target_compile_features(bonkr-note-render PRIVATE cxx_std_20)
 target_include_directories(bonkr-note-render PRIVATE src tests)
 target_link_libraries(bonkr-note-render PRIVATE bonkr_core)
 bonkr_warnings(bonkr-note-render)
+
+# Plays the rock groove the record kits are fitted with through the built plug-in, to a WAV to be
+# measured as a drum stem; a review tool. stem_gate_tests holds the kits to the records.
+add_executable(bonkr-groove-render tools/groove_render.cpp)
+target_compile_features(bonkr-groove-render PRIVATE cxx_std_20)
+target_include_directories(bonkr-groove-render PRIVATE "${clap_SOURCE_DIR}/include" src tests)
+target_link_libraries(bonkr-groove-render PRIVATE bonkr_core ${CMAKE_DL_LIBS})
+bonkr_warnings(bonkr-groove-render)
+bonkr_enable_assertions(bonkr-groove-render)
 
 if(BONKR_EDITOR AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # The plug-in side of the editor (host, gestures, relevance, artwork) compiled with the plug-in

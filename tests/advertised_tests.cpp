@@ -16,6 +16,7 @@
 #include "../src/dsp/core.hpp"
 #include "../src/dsp/catalog.hpp"
 #include "../src/dsp/kits.hpp"
+#include "../src/dsp/machine.hpp"
 #include "../src/presets.hpp"
 #include "../src/params.hpp"
 #include "audio_measure.hpp"
@@ -363,6 +364,20 @@ std::array<Proof, P::kParamCount> proofs() {
     const double ca = crest(a), cb = crest(b);
     return verdict(cb < ca - 2.0, "crest factor %.1f dB -> %.1f dB (expected at least 2 dB flatter)", ca, cb);
   });
+  // The closed hat onto a cassette at 4.76 cm/s: 2 um between tape and head costs a 10 kHz wave
+  // 54.6 dB per wavelength of gap (Wallace), 23 dB; at 19 cm/s the waves are four times longer and
+  // the same gap costs a quarter of that.
+  {
+    const auto hiss_db = [](const Render& r) { return band_db(window(r, 0.0, 0.3), 9500.0, 10500.0); };
+    set(kHeadSpacing, kit(D::kits::kStudioRock, {}, 42), 0.0, 2.0, [=](const Render& a, const Render& b) {
+      const double d = hiss_db(a) - hiss_db(b), expected = D::machine::Tape::loss_db(10000.0, 0.0476, 2e-6);
+      return verdict(std::abs(d - expected) <= 2.5, "10 kHz fell %.1f dB (expected %.1f +- 2.5)", d, expected);
+    });
+    set(kTapeSpeed, kit(D::kits::kStudioRock, {{kHeadSpacing, 2.0}}, 42), 0, 2, [=](const Render& a, const Render& b) {
+      const double d = hiss_db(b) - hiss_db(a), expected = D::machine::Tape::loss_db(10000.0, 0.0476, 2e-6) - D::machine::Tape::loss_db(10000.0, 0.19, 2e-6);
+      return verdict(std::abs(d - expected) <= 2.5, "10 kHz rose %.1f dB (expected %.1f +- 2.5)", d, expected);
+    });
+  }
   // The open hat, then the pedal closed at 150 ms.
   {
     Context c = kit(D::kits::kStudioRock, {}, 46); c.hold_s = 0.1; c.tail_s = 0.6;

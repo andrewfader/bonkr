@@ -74,6 +74,13 @@ inline const std::vector<Preset>& all() {
       // a rock kit as it sits on tape: spot microphones on the drums in front of a pair in a
       // studio room, lightly squashed
       {"Psych rock kit, taped", {{kLayout, kLayoutKit}, {kKit, dsp::kits::kPsychRock}, {kRoomSize, 3}, {kRoomAbsorption, 0.3}, {kMicDistance, 2.0}, {kCloseMics, 0.85}, {kCrush, 0.2}, {kMasterDb, -0.4}}},
+      // two microphones a foot from the kit in a small, damped basement, squashed, onto a
+      // four-track cassette at double speed whose heads have lost touch with the tape (worn heads,
+      // shed oxide, the drums bounced to another track): dark, boomy and all but mono
+      {"Four-track basement kit", {{kLayout, kLayoutKit}, {kKit, dsp::kits::kFourTrack}, {kRoomSize, 2}, {kRoomAbsorption, 0.5}, {kMicDistance, 0.3}, {kStereoWidth, 0.0}, {kCrush, 0.4}, {kTapeSpeed, 1}, {kHeadSpacing, 2.0}, {kMasterDb, 5.3}}},
+      // spot microphones and a pair in a studio-sized room, squashed hard, onto a 19 cm/s reel
+      // worn and bounced until its top is gone: roomy, warm, a little wide and dull
+      {"Home-studio psych kit", {{kLayout, kLayoutKit}, {kKit, dsp::kits::kHomePsych}, {kRoomSize, 3}, {kRoomAbsorption, 0.3}, {kMicDistance, 2.0}, {kCloseMics, 0.5}, {kCrush, 0.5}, {kTapeSpeed, 2}, {kHeadSpacing, 4.0}, {kMasterDb, 2.4}}},
   };
   return table;
 }

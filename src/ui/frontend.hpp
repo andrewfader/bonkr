@@ -23,7 +23,7 @@ bool gui_param_relevant(const Plugin* p, clap_id id) {
 const char* gui_help(clap_id id) {
   switch (id) {
     case kLayout: return "Kit: every key a different drum, on the General MIDI drum map (kick on C1, snare on D1, hats on F#1, G#1, A#1, cymbals above). One sound: the chosen sound across the whole keyboard, C4 at its own pitch, a semitone a key.";
-    case kKit: return "The kit on the drum map: acoustic sets (studio, jazz brushes, funk, a big room, gated 80s), orchestral, Latin, taiko and world percussion, the TR-808, TR-909 and CR-78 circuits, the LinnDrum, DMX, SP-1200, MPC60 and HR-16 heard through their converters, a junkyard, foley and machines, artillery and fireworks.";
+    case kKit: return "The kit on the drum map: acoustic sets (studio, jazz brushes, funk, a big room, gated 80s), orchestral, Latin, taiko and world percussion, the TR-808, TR-909 and CR-78 circuits, the LinnDrum, DMX, SP-1200, MPC60 and HR-16 heard through their converters, a junkyard, foley and machines, artillery and fireworks, and kits balanced as the drums of psych, basement four-track and home-studio records sit.";
     case kSound: return "The one sound played across the keyboard: any drum, cymbal, hand percussion, circuit, junk, machine or blast in BONKR.";
     case kMasterDb: return "The output level, before the limiter.";
     case kTune: return "Tunes every drum: a head's tension, a bar's length, a circuit's oscillators; for blasts it scales the charge (a lower note is a bigger charge).";
@@ -55,6 +55,8 @@ const char* gui_help(clap_id id) {
     case kMicPattern: return "The microphones' pattern: omni hears the room all round, cardioid less of it, figure-8 the front and back.";
     case kMicSetup: return "A stereo pair, or one microphone in mono.";
     case kPreset: return "Factory presets: a kit or a sound in a room, ready to play.";
+    case kTapeSpeed: return "The speed of the tape the drums were recorded to: the slower it runs, the shorter its waves and the more any gap at the head costs the top end.";
+    case kHeadSpacing: return "The gap between the tape and the playback head (shed oxide, worn heads, a tired pressure pad, bounce after bounce): the tape loses 54.6 dB per wavelength of gap, the top first. 0: the head on the tape, flat.";
     case kCloseMics: return "How much of the sound comes from spot microphones on the drums rather than the pair in the room: the drums dry, at once and where they stand, with the room behind them.";
     default: return nullptr;
   }

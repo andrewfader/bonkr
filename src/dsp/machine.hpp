@@ -14,6 +14,16 @@
 //   pulls a room's tail up to the level of the hit.
 // - A noise gate on that room: open while the sound is over the threshold, held open for the hold
 //   time, then shut fast. Together they are the gated drum sound of the early 1980s.
+// - The tape the drums were recorded to, played back through a head that does not touch it. The
+//   field a recorded wave of wavelength lambda reaches a head across a gap d falls as
+//   exp(-2 pi d / lambda), 54.6 dB per wavelength of spacing (Wallace's spacing loss), and the
+//   wavelength is the tape's speed over the frequency, so the top goes first and a slower tape
+//   loses more: 1 um on a cassette at 4.76 cm/s costs 11.5 dB at 10 kHz. Oxide shed onto the
+//   heads, worn heads, a tired pressure pad and every bounce to another track add to it; a
+//   machine whose head is on the tape is flat, its equalisation doing what it was set up to do.
+//   Along the tape the loss is the Poisson kernel d / (pi (d^2 + x^2)), a smear d / v seconds
+//   wide; it is applied as that kernel, band-limited to the sample rate, over a millisecond
+//   either side (so the stage delays by a millisecond while there is a gap).
 #pragma once
 
 #include <algorithm>
@@ -165,6 +175,59 @@ class Gate {
  private:
   double rate_ = 48000.0, open_coef_ = 0.1, close_coef_ = 0.01, detect_ = 0.1, detect_release_ = 0.01;
   double gain_ = 1.0, env_ = 0.0, hold_left_ = 0.0, threshold_ = 0.01, hold_ = 0.0;
+  bool on_ = false;
+};
+
+class Tape {
+ public:
+  static constexpr int kMaxHalf = 192;  // a millisecond at 192 kHz
+  void prepare(double rate) {
+    rate_ = rate;
+    half_ = std::clamp(static_cast<int>(std::lround(0.001 * rate)), 1, kMaxHalf);
+    speed_ = spacing_ = -1.0;
+    reset();
+  }
+  void reset() { for (auto& h : history_) h.fill(0.0f); at_ = 0; }
+  // `speed` in m/s, `spacing` in m.
+  void set(double speed, double spacing) {
+    if (speed == speed_ && spacing == spacing_) return;
+    speed_ = speed; spacing_ = spacing;
+    const bool was_on = on_;
+    on_ = spacing > 0.0 && speed > 0.0;
+    if (!on_) return;
+    if (!was_on) reset();
+    // The kernel band-limited to the sample rate: the inverse transform of exp(-a |f|) over
+    // |f| < rate / 2, a = 2 pi d / v, so nothing above Nyquist folds back.
+    const double a = kTau * spacing / speed, edge = std::exp(-a * 0.5 * rate_);
+    std::array<double, kTaps> h{};
+    double sum = 0.0;
+    for (int n = -half_; n <= half_; ++n) {
+      const double w = kTau * n / rate_;
+      sum += h[static_cast<size_t>(n + half_)] = (1.0 - (n % 2 ? -edge : edge)) * a / (a * a + w * w);
+    }
+    for (int n = 0; n <= 2 * half_; ++n) kernel_[static_cast<size_t>(n)] = static_cast<float>(h[static_cast<size_t>(n)] / sum);
+  }
+  // Wallace's spacing loss, dB, of a wave at `hz`.
+  static double loss_db(double hz, double speed, double spacing) { return 20.0 * std::log10(std::exp(1.0)) * kTau * spacing * hz / speed; }
+  void process(float& l, float& r) {
+    if (!on_) return;
+    const int taps = 2 * half_ + 1;
+    history_[0][static_cast<size_t>(at_)] = history_[0][static_cast<size_t>(at_ + taps)] = l;
+    history_[1][static_cast<size_t>(at_)] = history_[1][static_cast<size_t>(at_ + taps)] = r;
+    float y[2] = {0.0f, 0.0f};
+    for (int c = 0; c < 2; ++c) {
+      const float* h = history_[static_cast<size_t>(c)].data() + at_ + 1;
+      for (int k = 0; k < taps; ++k) y[c] += kernel_[static_cast<size_t>(k)] * h[k];
+    }
+    if (++at_ == taps) at_ = 0;
+    l = y[0]; r = y[1];
+  }
+ private:
+  static constexpr int kTaps = 2 * kMaxHalf + 1;
+  std::array<float, kTaps> kernel_{};
+  std::array<std::array<float, 2 * kTaps>, 2> history_{};
+  double rate_ = 48000.0, speed_ = -1.0, spacing_ = -1.0;
+  int half_ = 48, at_ = 0;
   bool on_ = false;
 };
 

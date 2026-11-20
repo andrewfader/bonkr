@@ -19,7 +19,7 @@ SCENARIO(every_kit_puts_its_drums_where_general_midi_puts_them) {
   const auto& maps = dsp::kits::all();
   const auto role = [](int s) { return dsp::kSoundNames[s]; };
   THEN("C1 (36) is a kick, D1 (38) a snare, F#1 (42) a closed hat and A#1 (46) an open one, in the acoustic and sampled sets");
-  for (int k : {dsp::kits::kStudioRock, dsp::kits::kFunk, dsp::kits::kBigRoom, dsp::kits::kGated80s, dsp::kits::kLinn, dsp::kits::kDmx, dsp::kits::kSp1200, dsp::kits::kMpc60, dsp::kits::kHr16, dsp::kits::kPsychRock}) {
+  for (int k : {dsp::kits::kStudioRock, dsp::kits::kFunk, dsp::kits::kBigRoom, dsp::kits::kGated80s, dsp::kits::kLinn, dsp::kits::kDmx, dsp::kits::kSp1200, dsp::kits::kMpc60, dsp::kits::kHr16, dsp::kits::kPsychRock, dsp::kits::kFourTrack, dsp::kits::kHomePsych}) {
     const auto& m = maps[static_cast<size_t>(k)];
     CHECK(std::string(role(m[36].sound)).find("Kick") == 0, std::string(dsp::kits::kKitNames[k]) + " kick");
     CHECK(std::string(role(m[38].sound)).find("Snare") == 0, std::string(dsp::kits::kKitNames[k]) + " snare");

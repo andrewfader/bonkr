@@ -29,12 +29,12 @@ spread real instruments show (see [references/README.md](references/README.md)).
 | Machines and the environment | an electromechanical telephone bell, a washing machine, a jet flyby (Doppler), a vuvuzela, an air-raid siren |
 | Fireworks and artillery | firework launch, burst, crackle and whistle; the 1812 cannon, a howitzer, a mortar, a rifle, a machine gun, a grenade, a big explosion, thunder, a sonic boom, a whip crack |
 
-**Twenty-one kits** on the General MIDI drum map (kick on C1, snare on D1, hats on F#1, G#1, A#1,
+**Twenty-three kits** on the General MIDI drum map (kick on C1, snare on D1, hats on F#1, G#1, A#1,
 cymbals and Latin percussion above), so any GM drum part plays any of them: studio rock, jazz
 brushes, funk, a big room, gated 80s, orchestral, Latin, taiko, world hand drums, the TR-808,
 TR-909 and CR-78, the LinnDrum, Oberheim DMX, E-mu SP-1200, Akai MPC60 and Alesis HR-16 (acoustic
 models through each machine's converter), a junkyard, foley and machines, artillery and
-fireworks, and a psych rock kit balanced to drum stems of rock records (spot microphones in front of a studio room). Or play **one sound across the keyboard**, C4 at its own pitch.
+fireworks, a psych rock kit balanced to drum stems of rock records (spot microphones in front of a studio room), and two kits fitted to the drum stems of lo-fi records: a basement four-track kit (a pair a foot from the drums in a small, damped room, onto a worn cassette four-track: dark, boomy, all but mono) and a home-studio psych kit (roomy, warm, a little wide, onto a worn reel). Or play **one sound across the keyboard**, C4 at its own pitch.
 
 **The player**: the striker (the one native to each sound, or a stick, felt mallet, hand, brush, rods or hard
 mallet) meeting the surface by Hertzian contact, its hardness, where it lands, how velocity
@@ -42,14 +42,16 @@ reaches the stroke's speed; a drum struck again while it rings is the same drum 
 **The drum**: decay, damping, the tension glide of a hard stroke, the snares and their strainer,
 the resonant head. **The machine**: the converters (LinnDrum and DMX 8-bit companded, SP-1200 and
 MPC60 12-bit, HR-16 16-bit), MPC swing and note repeat from the host's tempo, drive, the hi-hat
-choke. **The studio**: the listen-mic compressor and a gate on the room, for the gated drums of
+choke, and the tape the drums went to: its speed and the gap between it and the playback head,
+which takes the top off by Wallace's spacing loss. **The studio**: the listen-mic compressor and a gate on the room, for the gated drums of
 the early 1980s. **The room and its air**, as in HONKR (room size, absorption, microphone distance, pattern and setup, close mics on the drums against the pair in the room, humidity, temperature); the same air is what the blasts, the thunder and the passing jet cross outdoors, so a distant cannon is duller on a dry day. Chokes from the host (CLAP note choke) or
 an electronic kit's cymbal grab (polyphonic pressure).
 
-**48 presets**, among them "In the Air Tonight toms", "Gated snare, 1985", "Stairwell drums
+**50 presets**, among them "In the Air Tonight toms", "Gated snare, 1985", "Stairwell drums
 (Levee)", "808 boom, long and driven", "909 house, swung", "SP-1200 boom bap", "MPC60 swing",
 "1812 Overture cannons", "Jet flyby", "Thunder", "Telephone bell", "Vuvuzela", "Air-raid siren",
-"Metal pipe, dropped", "Ratchet (grogger)" and "Fireworks finale", each held to the [quality
+"Metal pipe, dropped", "Ratchet (grogger)", "Fireworks finale", "Four-track basement kit"
+and "Home-studio psych kit", each held to the [quality
 bar](docs/QUALITY.md).
 
 See [docs/PHYSICS.md](docs/PHYSICS.md) for what is simulated, how, and what is not.
@@ -82,6 +84,7 @@ or the network.
 | `air_tests` | the room and its air against the physics |
 | `engine_tests` | strokes and held sounds, velocity, every sound calibrated to one peak, every preset against the quality bar, the limiter, the tail, the converters, the compressor and the gate |
 | `reference_tests` | every referenced sound within its gate against recordings of the real instrument, and no worse than its baseline |
+| `stem_gate_tests` | the kits fitted to records: a rock groove through each lands inside the quartiles of those records' separated drum stems (roll-off, share below 250 Hz, centroid, crest, L/R correlation) |
 | `plugin_smoke`, `note_tests`, `state_tests` | the built `.clap` through the public CLAP ABI: discovery, ports, parameters, events at sample offsets, MIDI, chokes, presets, every sound, state |
 | `advertised_tests` | one proof per parameter from audio; fails if a parameter has no proof |
 | `ui_tests`, `frontend_tests` | the editor against a fake host and a recording canvas; the plug-in side of the editor |
@@ -89,7 +92,9 @@ or the network.
 Tools: `build/bonkr-note-render` renders any sound or kit key to WAV; `build/bonkr-preset-audit`
 renders and measures every preset (`--fit` refits their levels); `build/bonkr-reference` measures
 the recordings and scores BONKR against them; `build/bonkr-ui-preview` renders every editor page
-offscreen. [AGENTS.md](AGENTS.md) is the verification contract for changes.
+offscreen; `build/bonkr-groove-render` plays the fitting groove through the built `.clap` to a WAV
+to be measured as a drum stem (`tools/stem_reference.py` writes the records' numbers into
+`tests/stem_reference.hpp`). [AGENTS.md](AGENTS.md) is the verification contract for changes.
 
 ## Layout
 
@@ -98,7 +103,7 @@ offscreen. [AGENTS.md](AGENTS.md) is the verification contract for changes.
     src/dsp/voice.hpp     every sound's recipe, and one sounding voice
     src/dsp/catalog.hpp   the sounds' names, in the order of their saved values
     src/dsp/kits.hpp      the kits on the GM map
-    src/dsp/machine.hpp   the converters, the compressor, the gate
+    src/dsp/machine.hpp   the converters, the compressor, the gate, the tape
     src/dsp/air.hpp       the room and the air
     src/engine.hpp        voices, chokes, swing, note repeat, the bus, level calibration, the limiter
     src/params.hpp        the parameter table; src/presets.hpp the presets

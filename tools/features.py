@@ -13,6 +13,7 @@ FEATURES = [
     ('air', 'The room and the air', ['air_tests']),
     ('engine', 'The engine: strokes, levels, presets, limiter, converter, compressor and gate', ['engine_tests']),
     ('references', 'BONKR against recordings of the real instruments', ['reference_tests']),
+    ('record_stems', 'The kits fitted to records, against the drum stems of those records', ['stem_gate_tests']),
     ('clap_plugin', 'The plug-in through the CLAP ABI', ['plugin_smoke', 'note_tests', 'state_tests']),
     ('editor', 'The editor', ['ui_tests', 'frontend_tests']),
 ]

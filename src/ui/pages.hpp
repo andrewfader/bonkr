@@ -28,10 +28,11 @@ inline std::vector<PageSpec> bonkr_pages() {
        {{"Body", 0, {knob(kDecay), knob(kDamping), knob(kTension)}},
         {"Snares", 1, {knob(kSnares), knob(kSnareTension)}},
         {"Shell", 2, {knob(kResonance)}}}},
-      {"MACHINE", "The drum machines' converters and their feel: swing, note repeat, input drive, the hi-hat's choke", theme::red, 3, 168,
+      {"MACHINE", "The drum machines' converters and their feel: swing, note repeat, input drive, the hi-hat's choke; the tape", theme::red, 3, 168,
        {{"Converter", 0, {menu(kConverter, 3), knob(kDrive)}},
         {"Groove", 1, {knob(kSwing), menu(kNoteRepeat, 2)}},
-        {"Hi-hat", 2, {toggle(kChoke)}}}},
+        {"Hi-hat", 2, {toggle(kChoke)}},
+        {"Tape", 2, {menu(kTapeSpeed, 2), knob(kHeadSpacing)}}}},
       {"STUDIO", "The listen-mic compressor and the gate on the room: the gated drums of the early 1980s; the stereo picture", theme::violet, 3, 168,
        {{"Listen mic", 0, {knob(kCrush)}},
         {"Gate", 1, {knob(kGate), knob(kGateHold)}},
@@ -61,6 +62,8 @@ inline const char* bonkr_short_name(int id) {
     case kMicDistance: return "Distance";
     case kMicPattern: return "Pattern";
     case kMicSetup: return "Setup";
+    case kTapeSpeed: return "Speed";
+    case kHeadSpacing: return "Spacing";
     default: return nullptr;
   }
 }
@@ -86,6 +89,7 @@ inline bool param_relevant(int id, const double* values) {
     case kRoomAbsorption: return values[kRoomSize] > 0.0;
     case kMicPattern: case kMicSetup: case kCloseMics: return values[kRoomSize] > 0.0 || values[kMicDistance] > 0.0;
     case kGateHold: return values[kGate] > 0.0;
+    case kTapeSpeed: return values[kHeadSpacing] > 0.0;
     default: return true;
   }
 }
